@@ -4,25 +4,12 @@ class TestKeymaster < Test::Unit::TestCase
   def setup
     @path = get_tmpname
     @keymaster = Keymaster.new({
-      :path => @path,
+      :store => { :type => :filesystem, :path => @path },
       :key => fixture_path('id_rsa'),
       :password => 'secret'
     })
     @keymaster.add('Twitter', 'username', 'password')
     @keymaster.save
-  end
-
-  def get_tmpname
-    tmpname = Dir::Tmpname.create('keymaster') { }
-    @tmpnames ||= []
-    @tmpnames << tmpname
-    tmpname
-  end
-
-  def teardown
-    if @tmpnames
-      @tmpnames.each { |t| File.unlink(t) }
-    end
   end
 
   def test_encrypts_database
@@ -35,7 +22,7 @@ class TestKeymaster < Test::Unit::TestCase
 
   def test_reading_existing_database
     keymaster = Keymaster.new({
-      :path => @path,
+      :store => { :type => :filesystem, :path => @path },
       :key => fixture_path('id_rsa'),
       :password => 'secret'
     })

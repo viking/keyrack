@@ -5,9 +5,10 @@ require 'bundler/setup'
 
 class Keymaster
   def initialize(config)
-    @path = config[:path]
+    store_config = config[:store].dup
+    @store = Store[store_config.delete(:type)].new(store_config)
     @key = OpenSSL::PKey::RSA.new(File.read(config[:key]), config[:password])
-    @data = File.exist?(@path) ? decrypt_database : {}
+    @data = decrypt_database
   end
 
   def add(site, username, password)
@@ -23,13 +24,14 @@ class Keymaster
   end
 
   def save
-    File.open(@path, 'w') do |f|
-      f.write(@key.public_encrypt(Marshal.dump(@data)))
-    end
+    @store.write(@key.public_encrypt(Marshal.dump(@data)))
   end
 
   private
     def decrypt_database
-      Marshal.load(@key.private_decrypt(File.read(@path)))
+      data = @store.read
+      data ? Marshal.load(@key.private_decrypt(data)) : {}
     end
 end
+
+require File.dirname(__FILE__) + '/keymaster/store'

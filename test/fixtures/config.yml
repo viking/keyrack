@@ -1,4 +1,4 @@
 :store:
   :type: :filesystem
-  :path: /tmp/keymaster.dat
+  :path: /tmp/lockbox.dat
 :key: test/fixtures/id_rsa

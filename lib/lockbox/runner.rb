@@ -1,4 +1,4 @@
-module Keymaster
+module Lockbox
   class Runner
     def initialize(argv)
       OptionParser.new do |opts|

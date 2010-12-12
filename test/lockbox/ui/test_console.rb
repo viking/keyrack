@@ -1,6 +1,6 @@
 require 'helper'
 
-module Keymaster
+module Lockbox
   module UI
     class TestConsole < Test::Unit::TestCase
       def setup
@@ -91,7 +91,7 @@ module Keymaster
 
         question = mock('question')
         question.expects(:echo=).with(false)
-        highline.expects(:ask).with("Keymaster password: ").yields(question).returns("foobar")
+        highline.expects(:ask).with("Lockbox password: ").yields(question).returns("foobar")
         assert_equal "foobar", console.get_password
       end
 

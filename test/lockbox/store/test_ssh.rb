@@ -1,6 +1,6 @@
 require 'helper'
 
-module Keymaster
+module Lockbox
   module Store
     class TestSSH < Test::Unit::TestCase
       def test_read

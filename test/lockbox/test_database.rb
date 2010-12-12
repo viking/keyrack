@@ -1,10 +1,10 @@
 require 'helper'
 
-module Keymaster
+module Lockbox
   class TestDatabase < Test::Unit::TestCase
     def setup
       @path = get_tmpname
-      @database = Keymaster::Database.new({
+      @database = Lockbox::Database.new({
         :store => { :type => :filesystem, :path => @path },
         :key => fixture_path('id_rsa'),
         :password => 'secret'
@@ -22,7 +22,7 @@ module Keymaster
     end
 
     def test_reading_existing_database
-      database = Keymaster::Database.new({
+      database = Lockbox::Database.new({
         :store => { :type => :filesystem, :path => @path },
         :key => fixture_path('id_rsa'),
         :password => 'secret'

@@ -1,6 +1,6 @@
 require 'helper'
 
-module Keymaster
+module Lockbox
   module Store
     class TestFilesystem < Test::Unit::TestCase
       def test_read

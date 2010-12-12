@@ -1,4 +1,4 @@
-module Keymaster
+module Lockbox
   module Store
     class Filesystem
       def initialize(options)

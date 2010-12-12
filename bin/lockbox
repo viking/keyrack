@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+require 'lockbox'
+
+Lockbox::Runner.new(ARGV)

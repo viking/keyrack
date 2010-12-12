@@ -1,6 +1,6 @@
 require 'helper'
 
-module Keymaster
+module Lockbox
   class TestRunner < Test::Unit::TestCase
     def test_console
       config = {

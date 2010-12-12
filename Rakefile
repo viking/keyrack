@@ -12,8 +12,8 @@ require 'rake'
 require 'jeweler'
 Jeweler::Tasks.new do |gem|
   # gem is a Gem::Specification... see http://docs.rubygems.org/read/chapter/20 for more options
-  gem.name = "keymaster"
-  gem.homepage = "http://github.com/viking/keymaster"
+  gem.name = "lockbox"
+  gem.homepage = "http://github.com/viking/lockbox"
   gem.license = "MIT"
   gem.summary = %Q{Simple password manager}
   gem.description = %Q{Simple password manager with local/remote database storage and RSA encryption.}
@@ -55,7 +55,7 @@ Rake::RDocTask.new do |rdoc|
   version = File.exist?('VERSION') ? File.read('VERSION') : ""
 
   rdoc.rdoc_dir = 'rdoc'
-  rdoc.title = "keymaster #{version}"
+  rdoc.title = "lockbox #{version}"
   rdoc.rdoc_files.include('README*')
   rdoc.rdoc_files.include('lib/**/*.rb')
 end

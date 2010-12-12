@@ -3,7 +3,8 @@ module Keymaster
     def initialize(config)
       store_config = config[:store].dup
       @store = Store[store_config.delete(:type)].new(store_config)
-      @key = OpenSSL::PKey::RSA.new(File.read(config[:key]), config[:password])
+      key_path = File.expand_path(config[:key])
+      @key = OpenSSL::PKey::RSA.new(File.read(key_path), config[:password])
       @data = decrypt
     end
 

@@ -1,7 +1,7 @@
 require 'openssl'
-
 require 'rubygems'
 require 'bundler/setup'
+require 'net/scp'
 
 class Keymaster
   def initialize(config)

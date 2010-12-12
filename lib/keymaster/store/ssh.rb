@@ -1,4 +1,4 @@
-class Keymaster
+module Keymaster
   module Store
     class SSH
       def initialize(options)

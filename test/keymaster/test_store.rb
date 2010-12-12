@@ -1,6 +1,6 @@
 require 'helper'
 
-class Keymaster
+module Keymaster
   class TestStore < Test::Unit::TestCase
     def test_get_filesystem
       assert_equal Store::Filesystem, Store[:filesystem]

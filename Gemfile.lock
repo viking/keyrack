@@ -12,6 +12,7 @@ GEM
       net-ssh (>= 1.99.1)
     net-ssh (2.0.23)
     rake (0.8.7)
+    rcov (0.9.9)
 
 PLATFORMS
   ruby
@@ -21,3 +22,4 @@ DEPENDENCIES
   jeweler (~> 1.5.1)
   mocha
   net-scp
+  rcov

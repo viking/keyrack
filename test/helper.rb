@@ -1,3 +1,4 @@
+require 'tempfile'
 require 'rubygems'
 require 'bundler'
 begin
@@ -8,10 +9,14 @@ rescue Bundler::BundlerError => e
   exit e.status_code
 end
 require 'test/unit'
+require 'mocha'
 
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 require 'keymaster'
 
 class Test::Unit::TestCase
+  def fixture_path(name)
+    File.dirname(__FILE__) + '/fixtures/' + name
+  end
 end

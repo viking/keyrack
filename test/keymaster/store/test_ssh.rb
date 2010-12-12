@@ -19,6 +19,9 @@ module Keymaster
       end
 
       def test_read_returns_nil_for_non_existant_file
+        store = SSH.new(:host => 'example.com', :user => 'dude', :path => 'foo.txt')
+        Net::SCP.expects(:download!).with("example.com", "dude", "foo.txt").raises(Net::SCP::Error)
+        assert_nil store.read
       end
     end
   end

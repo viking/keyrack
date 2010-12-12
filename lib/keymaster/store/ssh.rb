@@ -8,7 +8,11 @@ module Keymaster
       end
 
       def read
-        Net::SCP.download!(@host, @user, @path)
+        begin
+          Net::SCP.download!(@host, @user, @path)
+        rescue Net::SCP::Error
+          nil
+        end
       end
 
       def write(data)

@@ -1,4 +1,5 @@
 require 'openssl'
+require 'yaml'
 require 'optparse'
 require 'net/scp'
 require 'highline'

@@ -1,7 +1,5 @@
 require 'openssl'
 require 'optparse'
-require 'rubygems'
-require 'bundler/setup'
 require 'net/scp'
 require 'highline'
 require 'clipboard'

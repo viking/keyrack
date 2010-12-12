@@ -20,8 +20,15 @@ module Keymaster
         console = Console.new
         console.database = @database
 
+        highline.expects(:say).with(" 1. Twitter [username]")
+        highline.expects(:say).with(" n. Add new")
+        highline.expects(:say).with(" s. Save")
+        highline.expects(:say).with(" q. Quit")
+
+        question = mock('question')
+        question.expects(:in=).with(%w{n s q 1})
+        highline.expects(:ask).yields(question).returns('1')
         Clipboard.expects(:copy).with('password')
-        highline.expects(:choose).with("Twitter [username]", "Add new", "Save", "Quit").returns("Twitter [username]")
         highline.expects(:say).with("The password has been copied to your clipboard.")
         assert_nil console.menu
       end
@@ -32,7 +39,14 @@ module Keymaster
         console = Console.new
         console.database = @database
 
-        highline.expects(:choose).with("Twitter [username]", "Add new", "Save", "Quit").returns("Add new")
+        highline.expects(:say).with(" 1. Twitter [username]")
+        highline.expects(:say).with(" n. Add new")
+        highline.expects(:say).with(" s. Save")
+        highline.expects(:say).with(" q. Quit")
+
+        question = mock('question')
+        question.expects(:in=).with(%w{n s q 1})
+        highline.expects(:ask).yields(question).returns('n')
         assert_equal :new, console.menu
       end
 
@@ -42,7 +56,14 @@ module Keymaster
         console = Console.new
         console.database = @database
 
-        highline.expects(:choose).with("Twitter [username]", "Add new", "Save", "Quit").returns("Quit")
+        highline.expects(:say).with(" 1. Twitter [username]")
+        highline.expects(:say).with(" n. Add new")
+        highline.expects(:say).with(" s. Save")
+        highline.expects(:say).with(" q. Quit")
+
+        question = mock('question')
+        question.expects(:in=).with(%w{n s q 1})
+        highline.expects(:ask).yields(question).returns('q')
         assert_equal :quit, console.menu
       end
 
@@ -52,7 +73,14 @@ module Keymaster
         console = Console.new
         console.database = @database
 
-        highline.expects(:choose).with("Twitter [username]", "Add new", "Save", "Quit").returns("Save")
+        highline.expects(:say).with(" 1. Twitter [username]")
+        highline.expects(:say).with(" n. Add new")
+        highline.expects(:say).with(" s. Save")
+        highline.expects(:say).with(" q. Quit")
+
+        question = mock('question')
+        question.expects(:in=).with(%w{n s q 1})
+        highline.expects(:ask).yields(question).returns('s')
         assert_equal :save, console.menu
       end
 

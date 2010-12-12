@@ -11,21 +11,27 @@ module Keymaster
       end
 
       def menu
-        choices = @database.sites.inject({}) do |hsh, site|
+        entries = []
+        choices = %w{n s q}
+        @database.sites.each_with_index do |site, i|
           entry = @database.get(site)
-          hsh["#{site} [#{entry[:username]}]"] = entry
-          hsh
+          entries << entry
+          choices << "#{i+1}"
+          @highline.say("% 2d. %s [%s]" % [i+1, site, entry[:username]])
         end
-        result = @highline.choose(*choices.keys.sort, "Add new", "Save", "Quit")
+        @highline.say(" n. Add new")
+        @highline.say(" s. Save")
+        @highline.say(" q. Quit")
+        result = @highline.ask(" ?  ") { |q| q.in = choices }
         case result
-        when "Add new"
+        when "n"
           :new
-        when "Save"
+        when "s"
           :save
-        when "Quit"
+        when "q"
           :quit
         else
-          Clipboard.copy(choices[result][:password])
+          Clipboard.copy(entries[result.to_i - 1][:password])
           @highline.say("The password has been copied to your clipboard.")
           nil
         end

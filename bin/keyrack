@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+require 'keyrack'
+
+Keyrack::Runner.new(ARGV)

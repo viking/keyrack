@@ -1,4 +1,4 @@
-module Lockbox
+module Keyrack
   module Store
     def self.[](name)
       case name

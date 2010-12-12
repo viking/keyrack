@@ -13,7 +13,7 @@ require 'mocha'
 
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
-require 'lockbox'
+require 'keyrack'
 
 class Test::Unit::TestCase
   def fixture_path(name)
@@ -21,7 +21,7 @@ class Test::Unit::TestCase
   end
 
   def get_tmpname
-    tmpname = Dir::Tmpname.create('lockbox') { }
+    tmpname = Dir::Tmpname.create('keyrack') { }
     @tmpnames ||= []
     @tmpnames << tmpname
     tmpname

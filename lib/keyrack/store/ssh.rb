@@ -1,4 +1,4 @@
-module Lockbox
+module Keyrack
   module Store
     class SSH
       def initialize(options)

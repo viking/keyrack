@@ -1,4 +1,4 @@
-module Lockbox
+module Keyrack
   module UI
   end
 end

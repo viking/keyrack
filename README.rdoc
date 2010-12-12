@@ -1,9 +1,9 @@
-= lockbox
+= keyrack
 
-Lockbox is a simple password manager with local or remote storage and RSA
+Keyrack is a simple password manager with local or remote storage and RSA
 encryption.
 
-== Contributing to lockbox
+== Contributing to keyrack
 
 * Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet
 * Check out the issue tracker to make sure someone already hasn't requested it and/or contributed it

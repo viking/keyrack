@@ -1,4 +1,4 @@
-module Lockbox
+module Keyrack
   module UI
     class Console
       attr_accessor :database
@@ -7,7 +7,7 @@ module Lockbox
       end
 
       def get_password
-        @highline.ask("Lockbox password: ") { |q| q.echo = false }
+        @highline.ask("Keyrack password: ") { |q| q.echo = false }
       end
 
       def menu

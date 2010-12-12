@@ -1,4 +1,4 @@
-module Lockbox
+module Keyrack
   class Database
     def initialize(config)
       store_config = config[:store].dup

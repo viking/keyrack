@@ -18,6 +18,10 @@ class Keymaster
     @data[site]
   end
 
+  def sites
+    @data.keys
+  end
+
   def save
     File.open(@path, 'w') do |f|
       f.write(@key.public_encrypt(Marshal.dump(@data)))

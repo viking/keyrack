@@ -39,9 +39,27 @@ module Keyrack
 
       def get_new_entry
         result = {}
-        result[:site]     = @highline.ask("Site:     ")
+        result[:site]     = @highline.ask("Label: ")
         result[:username] = @highline.ask("Username: ")
-        result[:password] = @highline.ask("Password: ")
+        if @highline.agree("Generate password? [yn] ")
+          loop do
+            password = Utils.generate_password
+            if @highline.agree("Generated '#{password}'.  Sound good? [yn] ")
+              result[:password] = password
+              break
+            end
+          end
+        else
+          loop do
+            password = @highline.ask("Password: ") { |q| q.echo = false }
+            confirmation = @highline.ask("Password (again): ") { |q| q.echo = false }
+            if password == confirmation
+              result[:password] = password
+              break
+            end
+            @highline.say("Passwords didn't match.  Try again!")
+          end
+        end
         result
       end
     end

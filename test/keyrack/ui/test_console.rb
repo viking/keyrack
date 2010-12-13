@@ -95,15 +95,37 @@ module Keyrack
         assert_equal "foobar", console.get_password
       end
 
-      def test_get_new_entry
+      def test_get_new_entry_with_manual_password
         highline = mock('highline')
         HighLine.expects(:new).returns(highline)
         console = Console.new
 
-        highline.expects(:ask).with("Site:     ").returns("Foo")
-        highline.expects(:ask).with("Username: ").returns("bar")
-        highline.expects(:ask).with("Password: ").returns("baz")
+        seq = sequence("new entry")
+        highline.expects(:ask).with("Label: ").returns("Foo").in_sequence(seq)
+        highline.expects(:ask).with("Username: ").returns("bar").in_sequence(seq)
+        highline.expects(:agree).with("Generate password? [yn] ").returns(false).in_sequence(seq)
+        highline.expects(:ask).with("Password: ").yields(mock { expects(:echo=).with(false) }).returns("baz").in_sequence(seq)
+        highline.expects(:ask).with("Password (again): ").yields(mock { expects(:echo=).with(false) }).returns("bar").in_sequence(seq)
+        highline.expects(:say).with("Passwords didn't match.  Try again!").in_sequence(seq)
+        highline.expects(:ask).with("Password: ").yields(mock { expects(:echo=).with(false) }).returns("baz").in_sequence(seq)
+        highline.expects(:ask).with("Password (again): ").yields(mock { expects(:echo=).with(false) }).returns("baz").in_sequence(seq)
         assert_equal({:site => "Foo", :username => "bar", :password => "baz"}, console.get_new_entry)
+      end
+
+      def test_get_new_entry_generated_password
+        highline = mock('highline')
+        HighLine.expects(:new).returns(highline)
+        console = Console.new
+
+        seq = sequence("new entry")
+        highline.expects(:ask).with("Label: ").returns("Foo").in_sequence(seq)
+        highline.expects(:ask).with("Username: ").returns("bar").in_sequence(seq)
+        highline.expects(:agree).with("Generate password? [yn] ").returns(true).in_sequence(seq)
+        Utils.expects(:generate_password).returns('foobar').in_sequence(seq)
+        highline.expects(:agree).with("Generated 'foobar'.  Sound good? [yn] ").returns(false).in_sequence(seq)
+        Utils.expects(:generate_password).returns('foobar').in_sequence(seq)
+        highline.expects(:agree).with("Generated 'foobar'.  Sound good? [yn] ").returns(true).in_sequence(seq)
+        assert_equal({:site => "Foo", :username => "bar", :password => "foobar"}, console.get_new_entry)
       end
     end
   end

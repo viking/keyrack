@@ -16,7 +16,7 @@ module Keyrack
 
       seq = sequence('ui sequence')
       console.expects(:get_password).returns('secret').in_sequence(seq)
-      Database.expects(:new).with(config.merge(:password => 'secret')).returns(database).in_sequence(seq)
+      Database.expects(:new).with(config.merge('password' => 'secret')).returns(database).in_sequence(seq)
       console.expects(:database=).with(database).in_sequence(seq)
       console.expects(:menu).returns(:new).in_sequence(seq)
       console.expects(:get_new_entry).returns({:site => "Foo", :username => "bar", :password => "baz"}).in_sequence(seq)

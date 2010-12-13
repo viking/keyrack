@@ -13,7 +13,7 @@ module Keyrack
       @options = YAML.load_file(File.expand_path(options[:config_path]))
       @ui = UI::Console.new
       password = @ui.get_password
-      @database = Database.new(@options.merge(:password => password))
+      @database = Database.new(@options.merge('password' => password))
       @ui.database = @database
 
       main_loop

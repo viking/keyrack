@@ -34,5 +34,11 @@ module Keyrack
     def test_sites
       assert_equal(%w{Twitter}, @database.sites)
     end
+
+    def test_dirty
+      assert !@database.dirty?
+      @database.add('Foo', 'bar', 'baz')
+      assert @database.dirty?
+    end
   end
 end

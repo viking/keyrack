@@ -22,11 +22,10 @@ module Keyrack
 
         highline.expects(:say).with(" 1. Twitter [username]")
         highline.expects(:say).with(" n. Add new")
-        highline.expects(:say).with(" s. Save")
         highline.expects(:say).with(" q. Quit")
 
         question = mock('question')
-        question.expects(:in=).with(%w{n s q 1})
+        question.expects(:in=).with(%w{n q 1})
         highline.expects(:ask).yields(question).returns('1')
         Clipboard.expects(:copy).with('password')
         highline.expects(:say).with("The password has been copied to your clipboard.")
@@ -41,11 +40,10 @@ module Keyrack
 
         highline.expects(:say).with(" 1. Twitter [username]")
         highline.expects(:say).with(" n. Add new")
-        highline.expects(:say).with(" s. Save")
         highline.expects(:say).with(" q. Quit")
 
         question = mock('question')
-        question.expects(:in=).with(%w{n s q 1})
+        question.expects(:in=).with(%w{n q 1})
         highline.expects(:ask).yields(question).returns('n')
         assert_equal :new, console.menu
       end
@@ -58,13 +56,30 @@ module Keyrack
 
         highline.expects(:say).with(" 1. Twitter [username]")
         highline.expects(:say).with(" n. Add new")
-        highline.expects(:say).with(" s. Save")
         highline.expects(:say).with(" q. Quit")
 
         question = mock('question')
-        question.expects(:in=).with(%w{n s q 1})
+        question.expects(:in=).with(%w{n q 1})
         highline.expects(:ask).yields(question).returns('q')
         assert_equal :quit, console.menu
+      end
+
+      def test_select_quit_from_menu_when_database_is_dirty
+        highline = mock('highline')
+        HighLine.expects(:new).returns(highline)
+        console = Console.new
+        console.database = @database
+        @database.stubs(:dirty?).returns(true)
+
+        highline.expects(:say).with(" 1. Twitter [username]")
+        highline.expects(:say).with(" n. Add new")
+        highline.expects(:say).with(" s. Save")
+        highline.expects(:say).with(" q. Quit")
+
+        question = mock('question', :in= => nil)
+        highline.expects(:ask).yields(question).returns('q')
+        highline.expects(:agree).with("Really quit?  You have unsaved changes! [yn] ").returns(false)
+        assert_equal nil, console.menu
       end
 
       def test_select_save_from_menu
@@ -72,6 +87,7 @@ module Keyrack
         HighLine.expects(:new).returns(highline)
         console = Console.new
         console.database = @database
+        @database.stubs(:dirty?).returns(true)
 
         highline.expects(:say).with(" 1. Twitter [username]")
         highline.expects(:say).with(" n. Add new")
@@ -79,7 +95,7 @@ module Keyrack
         highline.expects(:say).with(" q. Quit")
 
         question = mock('question')
-        question.expects(:in=).with(%w{n s q 1})
+        question.expects(:in=).with(%w{n q 1 s})
         highline.expects(:ask).yields(question).returns('s')
         assert_equal :save, console.menu
       end
@@ -122,9 +138,11 @@ module Keyrack
         highline.expects(:ask).with("Username: ").returns("bar").in_sequence(seq)
         highline.expects(:agree).with("Generate password? [yn] ").returns(true).in_sequence(seq)
         Utils.expects(:generate_password).returns('foobar').in_sequence(seq)
-        highline.expects(:agree).with("Generated 'foobar'.  Sound good? [yn] ").returns(false).in_sequence(seq)
+        highline.expects(:color).with('foobar', :blue).returns('bluefoobar').in_sequence(seq)
+        highline.expects(:agree).with("Generated bluefoobar.  Sound good? [yn] ").returns(false).in_sequence(seq)
         Utils.expects(:generate_password).returns('foobar').in_sequence(seq)
-        highline.expects(:agree).with("Generated 'foobar'.  Sound good? [yn] ").returns(true).in_sequence(seq)
+        highline.expects(:color).with('foobar', :blue).returns('bluefoobar').in_sequence(seq)
+        highline.expects(:agree).with("Generated bluefoobar.  Sound good? [yn] ").returns(true).in_sequence(seq)
         assert_equal({:site => "Foo", :username => "bar", :password => "foobar"}, console.get_new_entry)
       end
     end

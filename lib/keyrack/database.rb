@@ -6,10 +6,12 @@ module Keyrack
       key_path = File.expand_path(config['key'])
       @key = OpenSSL::PKey::RSA.new(File.read(key_path), config['password'])
       @data = decrypt
+      @dirty = false
     end
 
     def add(site, username, password)
       @data[site] = { :username => username, :password => password }
+      @dirty = true
     end
 
     def get(site)
@@ -20,8 +22,13 @@ module Keyrack
       @data.keys
     end
 
+    def dirty?
+      @dirty
+    end
+
     def save
       @store.write(@key.public_encrypt(Marshal.dump(@data)))
+      @dirty = false
     end
 
     private

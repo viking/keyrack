@@ -12,7 +12,7 @@ module Keyrack
 
       def menu
         entries = []
-        choices = %w{n s q}
+        choices = %w{n q}
         @database.sites.each_with_index do |site, i|
           entry = @database.get(site)
           entries << entry
@@ -20,7 +20,10 @@ module Keyrack
           @highline.say("% 2d. %s [%s]" % [i+1, site, entry[:username]])
         end
         @highline.say(" n. Add new")
-        @highline.say(" s. Save")
+        if @database.dirty?
+          @highline.say(" s. Save")
+          choices << "s"
+        end
         @highline.say(" q. Quit")
         result = @highline.ask(" ?  ") { |q| q.in = choices }
         case result
@@ -29,7 +32,11 @@ module Keyrack
         when "s"
           :save
         when "q"
-          :quit
+          if @database.dirty? && !@highline.agree("Really quit?  You have unsaved changes! [yn] ")
+            nil
+          else
+            :quit
+          end
         else
           Clipboard.copy(entries[result.to_i - 1][:password])
           @highline.say("The password has been copied to your clipboard.")
@@ -44,7 +51,7 @@ module Keyrack
         if @highline.agree("Generate password? [yn] ")
           loop do
             password = Utils.generate_password
-            if @highline.agree("Generated '#{password}'.  Sound good? [yn] ")
+            if @highline.agree("Generated #{@highline.color(password, :blue)}.  Sound good? [yn] ")
               result[:password] = password
               break
             end

@@ -25,7 +25,7 @@ The configuration file is a YAML file that requires the following data:
 * Required options:
   * *host*: host name
   * *user*: user name
-    * *path*: path to the keyrack database on remote host
+  * *path*: path to the keyrack database on remote host
 
 === Examples
 
@@ -64,7 +64,7 @@ Starting keyrack will display a simple menu in your terminal, like this:
   s. Save
   q. Quit
 
-Selecting *1* in this case will copy the Twitter password for the foobar user
+Selecting <b>1</b> in this case will copy the Twitter password for the foobar user
 to your clipboard.
 
 == Contributing to keyrack

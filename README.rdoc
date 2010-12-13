@@ -12,19 +12,19 @@ encryption.
 === Format
 
 The configuration file is a YAML file that requires the following data:
-* +key+: path to the RSA file you want to use
-* +store+: options for store (see below)
+* <code>key</code>: path to the RSA file you want to use
+* <code>store</code>: options for store (see below)
 
 === Store types
 
-* +filesystem+
+* <code>filesystem</code>
   * Required options:
-    * +path+: path to the keyrack database
+    * <code>path</code>: path to the keyrack database
 * +ssh+
   * Required options:
-    * +host+: host name
-    * +user+: user name
-    * +path+: path to the keyrack database on remote host
+    * <code>host</code>: host name
+    * <code>user</code>: user name
+    * <code>path</code>: path to the keyrack database on remote host
 
 === Examples
 

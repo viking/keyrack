@@ -2,8 +2,8 @@ module Keyrack
   module Store
     def self.[](name)
       case name
-      when :filesystem then Filesystem
-      when :ssh then SSH
+      when :filesystem, 'filesystem' then Filesystem
+      when :ssh, 'ssh' then SSH
       end
     end
   end

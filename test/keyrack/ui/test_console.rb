@@ -6,9 +6,9 @@ module Keyrack
       def setup
         @path = get_tmpname
         @database = Database.new({
-          :store => { :type => :filesystem, :path => @path },
-          :key => fixture_path('id_rsa'),
-          :password => 'secret'
+          'store' => { 'type' => 'filesystem', 'path' => @path },
+          'key' => fixture_path('id_rsa'),
+          'password' => 'secret'
         })
         @database.add('Twitter', 'username', 'password')
         @database.save

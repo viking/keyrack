@@ -5,9 +5,9 @@ module Keyrack
     def setup
       @path = get_tmpname
       @database = Keyrack::Database.new({
-        :store => { :type => :filesystem, :path => @path },
-        :key => fixture_path('id_rsa'),
-        :password => 'secret'
+        'store' => { 'type' => 'filesystem', 'path' => @path },
+        'key' => fixture_path('id_rsa'),
+        'password' => 'secret'
       })
       @database.add('Twitter', 'username', 'password')
       @database.save
@@ -23,9 +23,9 @@ module Keyrack
 
     def test_reading_existing_database
       database = Keyrack::Database.new({
-        :store => { :type => :filesystem, :path => @path },
-        :key => fixture_path('id_rsa'),
-        :password => 'secret'
+        'store' => { 'type' => 'filesystem', 'path' => @path },
+        'key' => fixture_path('id_rsa'),
+        'password' => 'secret'
       })
       expected = {:username => 'username', :password => 'password'}
       assert_equal(expected, database.get('Twitter'))

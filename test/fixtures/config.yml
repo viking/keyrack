@@ -1,4 +1,4 @@
-:store:
-  :type: :filesystem
-  :path: /tmp/keyrack.dat
-:key: test/fixtures/id_rsa
+'store':
+  'type': 'filesystem'
+  'path': /tmp/keyrack.dat
+'key': test/fixtures/id_rsa

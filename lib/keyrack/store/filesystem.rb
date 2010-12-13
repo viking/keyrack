@@ -2,7 +2,7 @@ module Keyrack
   module Store
     class Filesystem
       def initialize(options)
-        @path = File.expand_path(options[:path])
+        @path = File.expand_path(options['path'])
       end
 
       def read

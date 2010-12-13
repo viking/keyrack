@@ -4,8 +4,8 @@ module Keyrack
   class TestRunner < Test::Unit::TestCase
     def test_console
       config = {
-        :store => { :type => :filesystem, :path => 'foobar' },
-        :key => fixture_path('id_rsa')
+        'store' => { 'type' => 'filesystem', 'path' => 'foobar' },
+        'key' => fixture_path('id_rsa')
       }
       config_path = get_tmpname
       File.open(config_path, 'w') { |f| f.print(config.to_yaml) }

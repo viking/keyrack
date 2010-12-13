@@ -2,9 +2,9 @@ module Keyrack
   module Store
     class SSH
       def initialize(options)
-        @host = options[:host]
-        @user = options[:user]
-        @path = options[:path]
+        @host = options['host']
+        @user = options['user']
+        @path = options['path']
       end
 
       def read

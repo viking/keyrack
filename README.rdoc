@@ -3,6 +3,52 @@
 Keyrack is a simple password manager with local or remote storage and RSA
 encryption.
 
+== Installation
+
+  gem install keyrack
+
+== Configuration
+
+=== Format
+
+The configuration file is a YAML file that requires the following data:
+* +key+: path to the RSA file you want to use
+* +store+: options for store (see below)
+
+=== Store types
+
+* +filesystem+
+  * Required options:
+    * +path+: path to the keyrack database
+* +ssh+
+  * Required options:
+    * +host+: host name
+    * +user+: user name
+    * +path+: path to the keyrack database on remote host
+
+=== Examples
+
+Filesystem example
+  store:
+    type: filesystem
+    path: ~/.keyrack/database
+  key: ~/.keyrack/id_rsa
+
+SSH example
+  store:
+    type: ssh
+    host: example.com
+    user: foobar
+    path: ~/junk.dat
+  key: ~/.keyrack/id_rsa
+
+== Usage
+
+  keyrack [-c path-to-config]
+
+By default, keyrack will look for +~/.keyrack/config+.  The database file
+(merely a RSA-encrypted YAML file) will be created on save if it doesn't exist.
+
 == Contributing to keyrack
 
 * Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet

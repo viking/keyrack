@@ -1,12 +1,16 @@
 module Keyrack
   class Runner
     def initialize(argv)
+      options = {
+        :config_path => "~/.keyrack/config"
+      }
       OptionParser.new do |opts|
-        opts.on("-c", "--config FILE", "Specify configuration file") do |f|
-          @options = YAML.load_file(f)
+        opts.on("-c", "--config [FILE]", "Specify configuration file (Default: #{options[:config_path]}") do |f|
+          options[:config_path] = f
         end
       end.parse(argv)
 
+      @options = YAML.load_file(File.expand_path(options[:config_path]))
       @ui = UI::Console.new
       password = @ui.get_password
       @database = Database.new(@options.merge(:password => password))

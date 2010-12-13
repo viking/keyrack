@@ -46,7 +46,7 @@ SSH example
 
   keyrack [-c path-to-config]
 
-By default, keyrack will look for +~/.keyrack/config+.  The database file
+By default, keyrack will look for <b>~/.keyrack/config</b>.  The database file
 (merely a RSA-encrypted YAML file) will be created on save if it doesn't exist.
 
 == Contributing to keyrack

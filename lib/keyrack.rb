@@ -4,7 +4,7 @@ require 'optparse'
 require 'securerandom'
 require 'net/scp'
 require 'highline'
-require 'clipboard'
+require 'copier'
 
 module Keyrack
 end

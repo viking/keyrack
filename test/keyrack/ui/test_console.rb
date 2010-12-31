@@ -24,7 +24,7 @@ module Keyrack
         question = mock('question')
         question.expects(:in=).with(%w{n q 1})
         highline.expects(:ask).yields(question).returns('1')
-        Clipboard.expects(:copy).with('password')
+        console.expects(:Copier).with('password')
         highline.expects(:say).with("The password has been copied to your clipboard.")
         assert_nil console.menu
       end

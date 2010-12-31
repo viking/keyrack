@@ -38,7 +38,7 @@ module Keyrack
             :quit
           end
         else
-          Clipboard.copy(entries[result.to_i - 1][:password])
+          Copier(entries[result.to_i - 1][:password])
           @highline.say("The password has been copied to your clipboard.")
           nil
         end

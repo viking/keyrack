@@ -4,14 +4,11 @@ module Keyrack
   module UI
     class TestConsole < Test::Unit::TestCase
       def setup
-        @path = get_tmpname
-        @database = Database.new({
-          'store' => { 'type' => 'filesystem', 'path' => @path },
-          'key' => fixture_path('id_rsa'),
-          'password' => 'secret'
-        })
-        @database.add('Twitter', 'username', 'password')
-        @database.save
+        @database = stub('database', :sites => %w{Twitter}, :dirty? => false) do
+          stubs(:get).with('Twitter').returns({
+            :username => 'username', :password => 'password'
+          })
+        end
       end
 
       def test_select_entry_from_menu
@@ -144,6 +141,62 @@ module Keyrack
         highline.expects(:color).with('foobar', :blue).returns('bluefoobar').in_sequence(seq)
         highline.expects(:agree).with("Generated bluefoobar.  Sound good? [yn] ").returns(true).in_sequence(seq)
         assert_equal({:site => "Foo", :username => "bar", :password => "foobar"}, console.get_new_entry)
+      end
+
+      def test_display_first_time_notice
+        highline = mock('highline')
+        HighLine.expects(:new).returns(highline)
+        console = Console.new
+
+        highline.expects(:say).with("This looks like your first time using Keyrack.  I'll need to ask you a few questions first.")
+        console.display_first_time_notice
+      end
+
+      def test_rsa_setup
+        highline = mock('highline')
+        HighLine.expects(:new).returns(highline)
+        console = Console.new
+
+        seq = sequence("rsa setup")
+        highline.expects(:ask).with("New passphrase: ").yields(mock{expects(:echo=).with(false)}).returns('huge').in_sequence(seq)
+        highline.expects(:ask).with("Confirm passphrase: ").yields(mock{expects(:echo=).with(false)}).returns('small').in_sequence(seq)
+        highline.expects(:say).with("Passphrases didn't match.").in_sequence(seq)
+        highline.expects(:ask).with("New passphrase: ").yields(mock{expects(:echo=).with(false)}).returns('huge').in_sequence(seq)
+        highline.expects(:ask).with("Confirm passphrase: ").yields(mock{expects(:echo=).with(false)}).returns('huge').in_sequence(seq)
+        expected = {'password' => 'huge', 'path' => 'rsa'}
+        assert_equal expected, console.rsa_setup
+      end
+
+      def test_store_setup_for_filesystem
+        highline = mock('highline')
+        HighLine.expects(:new).returns(highline)
+        console = Console.new
+
+        highline.expects(:choose).yields(mock {
+          expects(:header=).with("Choose storage type:")
+          expects(:choices).with("filesystem", "ssh")
+        }).returns("filesystem")
+
+        expected = {'type' => 'filesystem', 'path' => 'database'}
+        assert_equal expected, console.store_setup
+      end
+
+      def test_store_setup_for_ssh
+        highline = mock('highline')
+        HighLine.expects(:new).returns(highline)
+        console = Console.new
+
+        seq = sequence("store setup")
+        highline.expects(:choose).yields(mock {
+          expects(:header=).with("Choose storage type:")
+          expects(:choices).with("filesystem", "ssh")
+        }).returns("ssh").in_sequence(seq)
+        highline.expects(:ask).with("Host: ").returns("example.com").in_sequence(seq)
+        highline.expects(:ask).with("User: ").returns("dudeguy").in_sequence(seq)
+        highline.expects(:ask).with("Remote path: ").returns(".keyrack/database").in_sequence(seq)
+
+        expected = {'type' => 'ssh', 'host' => 'example.com', 'user' => 'dudeguy', 'path' => '.keyrack/database'}
+        assert_equal expected, console.store_setup
       end
     end
   end

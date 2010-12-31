@@ -69,6 +69,40 @@ module Keyrack
         end
         result
       end
+
+      def display_first_time_notice
+        @highline.say("This looks like your first time using Keyrack.  I'll need to ask you a few questions first.")
+      end
+
+      def rsa_setup
+        password = confirmation = nil
+        loop do
+          password = @highline.ask("New passphrase: ") { |q| q.echo = false }
+          confirmation = @highline.ask("Confirm passphrase: ") { |q| q.echo = false }
+          break if password == confirmation
+          @highline.say("Passphrases didn't match.")
+        end
+        { 'password' => password, 'path' => 'rsa' }
+      end
+
+      def store_setup
+        result = {}
+        result['type'] = @highline.choose do |menu|
+          menu.header = "Choose storage type:"
+          menu.choices("filesystem", "ssh")
+        end
+
+        case result['type']
+        when 'filesystem'
+          result['path'] = 'database'
+        when 'ssh'
+          result['host'] = @highline.ask("Host: ")
+          result['user'] = @highline.ask("User: ")
+          result['path'] = @highline.ask("Remote path: ")
+        end
+
+        result
+      end
     end
   end
 end

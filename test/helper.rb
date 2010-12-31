@@ -1,4 +1,5 @@
 require 'tempfile'
+require 'fileutils'
 require 'rubygems'
 require 'bundler'
 begin
@@ -29,7 +30,7 @@ class Test::Unit::TestCase
 
   def teardown
     if @tmpnames
-      @tmpnames.each { |t| File.unlink(t) if File.exist?(t) }
+      @tmpnames.each { |t| FileUtils.rm_rf(t) }
     end
   end
 end

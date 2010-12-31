@@ -1,6 +1,7 @@
 require 'openssl'
 require 'yaml'
 require 'optparse'
+require 'securerandom'
 require 'net/scp'
 require 'highline'
 require 'clipboard'

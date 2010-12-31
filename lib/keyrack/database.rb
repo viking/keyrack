@@ -1,10 +1,9 @@
 module Keyrack
   class Database
-    def initialize(config)
-      store_config = config['store'].dup
-      @store = Store[store_config.delete('type')].new(store_config)
-      key_path = File.expand_path(config['key'])
-      @key = OpenSSL::PKey::RSA.new(File.read(key_path), config['password'])
+    def initialize(key, iv, store)
+      @key = key
+      @iv = iv
+      @store = store
       @data = decrypt
       @dirty = false
     end
@@ -27,14 +26,22 @@ module Keyrack
     end
 
     def save
-      @store.write(@key.public_encrypt(Marshal.dump(@data)))
+      cipher = OpenSSL::Cipher::Cipher.new("AES-128-CBC")
+      cipher.encrypt; cipher.key = @key; cipher.iv = @iv
+      @store.write(cipher.update(Marshal.dump(@data)) + cipher.final)
       @dirty = false
     end
 
     private
       def decrypt
         data = @store.read
-        data ? Marshal.load(@key.private_decrypt(data)) : {}
+        if data
+          cipher = OpenSSL::Cipher::Cipher.new("AES-128-CBC")
+          cipher.decrypt; cipher.key = @key; cipher.iv = @iv
+          Marshal.load(cipher.update(data) + cipher.final)
+        else
+          {}
+        end
       end
   end
 end

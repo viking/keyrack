@@ -39,6 +39,7 @@ When /I wait a few seconds/ do
 end
 
 Then /my clipboard should contain "([^"]+)"/ do |expected|
+  sleep 1
   result = %x{xclip -selection clipboard -o}.chomp
   result.should == expected
 end

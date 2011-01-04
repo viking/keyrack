@@ -39,6 +39,9 @@ module Keyrack
 
         # Store
         store_options = @ui.store_setup
+        if store_options['type'] == 'filesystem'
+          store_options['path'] = File.expand_path(store_options['path'], @config_path)
+        end
         @options['store'] = store_options
 
         # Write out config

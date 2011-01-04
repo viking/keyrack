@@ -23,7 +23,7 @@ module Keyrack
     end
 
     def self.open_aes_data(path, rsa_key)
-      Marshal.load(rsa_key.public_decrypt(File.read(path)))
+      Marshal.load(rsa_key.private_decrypt(File.read(path)))
     end
   end
 end

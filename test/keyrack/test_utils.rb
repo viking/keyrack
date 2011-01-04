@@ -34,7 +34,7 @@ module Keyrack
       aes_path = fixture_path('aes')
       aes = {'key' => '12345', 'iv' => '54321'}
       rsa = mock('rsa')
-      rsa.expects(:public_decrypt).with(File.read(aes_path)).returns(Marshal.dump(aes))
+      rsa.expects(:private_decrypt).with(File.read(aes_path)).returns(Marshal.dump(aes))
       assert_equal(aes, Utils.open_aes_data(aes_path, rsa))
     end
   end

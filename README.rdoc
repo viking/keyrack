@@ -1,7 +1,7 @@
 = keyrack
 
 Keyrack is a simple password manager with local or remote storage and RSA
-encryption.
+and AES encryption.
 
 == Installation
 
@@ -11,9 +11,15 @@ encryption.
 
   keyrack [-d directory]
 
-The first time you run Keyrack, it will present you with a series of prompts.
-You can specify the <b>-d</b> option if you want Keyrack to put its files somewhere
-other than <b>~/.keyrack</b>.
+The first time you run Keyrack, it will present you with a series of prompts in
+order to get you setup.  You can specify the <b>-d</b> option if you want
+Keyrack to put its configuration files somewhere other than <b>~/.keyrack</b>.
+
+Keyrack can either save its database locally to your filesystem or to a remote
+location (via ssh).  You will be asked which method you want during the setup
+phase.  If you want to access the same remote database from multiple locations,
+simply copy your Keyrack configuration directory (<b>~/.keyrack</b> by default)
+to each location.
 
 Running keyrack will display a simple menu in your terminal, like this:
 

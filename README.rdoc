@@ -12,8 +12,8 @@ encryption.
   keyrack [-d directory]
 
 The first time you run Keyrack, it will present you with a series of prompts.
-You can specify the *-d* option if you want Keyrack to put its files somewhere
-other than *~/.keyrack*.
+You can specify the <b>-d</b> option if you want Keyrack to put its files somewhere
+other than <b>~/.keyrack</b>.
 
 Running keyrack will display a simple menu in your terminal, like this:
 

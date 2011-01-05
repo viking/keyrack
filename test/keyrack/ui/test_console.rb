@@ -4,8 +4,8 @@ module Keyrack
   module UI
     class TestConsole < Test::Unit::TestCase
       def setup
-        @database = stub('database', :sites => %w{Twitter}, :dirty? => false) do
-          stubs(:get).with('Twitter').returns({
+        @database = stub('database', :sites => %w{Twitter}, :groups => [], :dirty? => false) do
+          stubs(:get).with('Twitter', {}).returns({
             :username => 'username', :password => 'password'
           })
         end
@@ -18,11 +18,12 @@ module Keyrack
         console.database = @database
 
         highline.expects(:say).with(" 1. Twitter [username]")
-        highline.expects(:say).with(" n. Add new")
+        highline.expects(:say).with(" n. New entry")
+        highline.expects(:say).with(" g. New group")
         highline.expects(:say).with(" q. Quit")
 
         question = mock('question')
-        question.expects(:in=).with(%w{n q 1})
+        question.expects(:in=).with(%w{n q 1 g})
         highline.expects(:ask).yields(question).returns('1')
         console.expects(:Copier).with('password')
         highline.expects(:say).with("The password has been copied to your clipboard.")
@@ -36,11 +37,12 @@ module Keyrack
         console.database = @database
 
         highline.expects(:say).with(" 1. Twitter [username]")
-        highline.expects(:say).with(" n. Add new")
+        highline.expects(:say).with(" n. New entry")
+        highline.expects(:say).with(" g. New group")
         highline.expects(:say).with(" q. Quit")
 
         question = mock('question')
-        question.expects(:in=).with(%w{n q 1})
+        question.expects(:in=).with(%w{n q 1 g})
         highline.expects(:ask).yields(question).returns('n')
         assert_equal :new, console.menu
       end
@@ -52,11 +54,12 @@ module Keyrack
         console.database = @database
 
         highline.expects(:say).with(" 1. Twitter [username]")
-        highline.expects(:say).with(" n. Add new")
+        highline.expects(:say).with(" n. New entry")
+        highline.expects(:say).with(" g. New group")
         highline.expects(:say).with(" q. Quit")
 
         question = mock('question')
-        question.expects(:in=).with(%w{n q 1})
+        question.expects(:in=).with(%w{n q 1 g})
         highline.expects(:ask).yields(question).returns('q')
         assert_equal :quit, console.menu
       end
@@ -69,7 +72,8 @@ module Keyrack
         @database.stubs(:dirty?).returns(true)
 
         highline.expects(:say).with(" 1. Twitter [username]")
-        highline.expects(:say).with(" n. Add new")
+        highline.expects(:say).with(" n. New entry")
+        highline.expects(:say).with(" g. New group")
         highline.expects(:say).with(" s. Save")
         highline.expects(:say).with(" q. Quit")
 
@@ -87,14 +91,57 @@ module Keyrack
         @database.stubs(:dirty?).returns(true)
 
         highline.expects(:say).with(" 1. Twitter [username]")
-        highline.expects(:say).with(" n. Add new")
+        highline.expects(:say).with(" n. New entry")
+        highline.expects(:say).with(" g. New group")
         highline.expects(:say).with(" s. Save")
         highline.expects(:say).with(" q. Quit")
 
         question = mock('question')
-        question.expects(:in=).with(%w{n q 1 s})
+        question.expects(:in=).with(%w{n q 1 g s})
         highline.expects(:ask).yields(question).returns('s')
         assert_equal :save, console.menu
+      end
+
+      def test_select_group_from_menu
+        highline = mock('highline')
+        HighLine.expects(:new).returns(highline)
+        console = Console.new
+        console.database = @database
+        @database.stubs(:groups).returns(["Blargh"])
+
+        highline.expects(:color).with('Blargh', :green).returns('greenBlargh')
+        highline.expects(:say).with(" 1. greenBlargh")
+        highline.expects(:say).with(" 2. Twitter [username]")
+        highline.expects(:say).with(" n. New entry")
+        highline.expects(:say).with(" g. New group")
+        highline.expects(:say).with(" q. Quit")
+
+        question = mock('question')
+        question.expects(:in=).with(%w{n q 1 2 g})
+        highline.expects(:ask).yields(question).returns('1')
+        assert_equal({:group => 'Blargh'}, console.menu)
+      end
+
+      def test_select_entry_from_group_menu
+        highline = mock('highline')
+        HighLine.expects(:new).returns(highline)
+        console = Console.new
+        console.database = @database
+        @database.expects(:sites).with(:group => "Foo").returns(["Facebook"])
+        @database.expects(:get).with('Facebook', :group => "Foo").returns({:username => 'username', :password => 'password'})
+
+        highline.expects(:say).with("===== Foo =====")
+        highline.expects(:say).with(" 1. Facebook [username]")
+        highline.expects(:say).with(" n. New entry")
+        highline.expects(:say).with(" t. Top level menu")
+        highline.expects(:say).with(" q. Quit")
+
+        question = mock('question')
+        question.expects(:in=).with(%w{n q 1 t})
+        highline.expects(:ask).yields(question).returns('1')
+        console.expects(:Copier).with('password')
+        highline.expects(:say).with("The password has been copied to your clipboard.")
+        assert_nil console.menu(:group => 'Foo')
       end
 
       def test_get_password
@@ -197,6 +244,18 @@ module Keyrack
 
         expected = {'type' => 'ssh', 'host' => 'example.com', 'user' => 'dudeguy', 'path' => '.keyrack/database'}
         assert_equal expected, console.store_setup
+      end
+
+      def test_get_new_group
+        highline = mock('highline')
+        HighLine.expects(:new).returns(highline)
+        console = Console.new
+
+        seq = sequence("new group")
+        highline.expects(:ask).with("Group: ").yields(mock {
+          expects(:validate=).with(/^\w[\w\s]*$/)
+        }).returns("Foo").in_sequence(seq)
+        assert_equal({:group => "Foo"}, console.get_new_group)
       end
     end
   end

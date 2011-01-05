@@ -25,6 +25,17 @@ Then /the output should contain "([^"]+)"/ do |expected|
   @output.should include(expected)
 end
 
+Then %r{the output should match /([^/]+)/} do |expected|
+  # This won't work for escaped backslashes
+  if @slept
+    @slept = false
+  else
+    sleep 1
+  end
+  @output = @out.read_nonblock(255)
+  @output.should match(Regexp.new(expected))
+end
+
 Then /the output should also contain "([^"]+)"/ do |expected|
   @output.should include(expected)
 end

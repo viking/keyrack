@@ -30,7 +30,16 @@ module Keyrack
     end
 
     def test_sites
+      @database.add('Blargh', 'dudeguy', 'secret', :group => "Junk")
       assert_equal(%w{Twitter}, @database.sites)
+      assert_equal(%w{Blargh}, @database.sites(:group => "Junk"))
+      assert_equal([], @database.sites(:group => "New group"))
+    end
+
+    def test_groups
+      assert_equal [], @database.groups
+      @database.add('Blargh', 'dudeguy', 'secret', :group => "Junk")
+      assert_equal %w{Junk}, @database.groups
     end
 
     def test_dirty
@@ -47,6 +56,12 @@ module Keyrack
       end
       @database.save
       assert_equal 501, @database.sites.length
+    end
+
+    def test_add_with_top_level_group
+      @database.add('Twitter', 'dudeguy', 'secret', :group => "Social")
+      expected = {:username => 'dudeguy', :password => 'secret'}
+      assert_equal expected, @database.get('Twitter', :group => "Social")
     end
   end
 end

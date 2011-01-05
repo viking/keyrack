@@ -54,15 +54,24 @@ module Keyrack
     end
 
     def main_loop
+      options = {}
       loop do
-        case @ui.menu
+        choice = @ui.menu(options)
+
+        case choice
         when :new
           result = @ui.get_new_entry
-          @database.add(result[:site], result[:username], result[:password])
+          @database.add(result[:site], result[:username], result[:password], options)
+        when :new_group
+          options = @ui.get_new_group
         when :save
           @database.save
         when :quit
           break
+        when Hash
+          options = choice
+        when :top
+          options = {}
         end
       end
     end

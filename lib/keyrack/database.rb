@@ -8,17 +8,28 @@ module Keyrack
       @dirty = false
     end
 
-    def add(site, username, password)
-      @data[site] = { :username => username, :password => password }
+    def add(site, username, password, options = {})
+      hash = options[:group] ? @data[options[:group]] ||= {} : @data
+      hash[site] = { :username => username, :password => password }
       @dirty = true
     end
 
-    def get(site)
-      @data[site]
+    def get(site, options = {})
+      (options[:group] ? @data[options[:group]] : @data)[site]
     end
 
-    def sites
-      @data.keys
+    def sites(options = {})
+      hash = options[:group] ? @data[options[:group]] : @data
+      if hash
+        hash.keys.select { |k| hash[k].keys.include?(:username) }.sort
+      else
+        # new groups are empty
+        []
+      end
+    end
+
+    def groups
+      @data.keys.reject { |k| @data[k].keys.include?(:username) }.sort
     end
 
     def dirty?

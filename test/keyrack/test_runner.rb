@@ -5,7 +5,7 @@ module Keyrack
     def setup
       @console = stub('console', {
         :get_password => 'secret',
-        :database= => nil, :menu => nil,
+        :database= => nil, :menu => :quit,
         :get_new_entry => {:site => "Foo", :username => "bar", :password => "baz"}
       })
       UI::Console.stubs(:new).returns(@console)
@@ -40,10 +40,19 @@ module Keyrack
 
       @console.expects(:menu).returns(:new).in_sequence(seq)
       @console.expects(:get_new_entry).returns({:site => "Foo", :username => "bar", :password => "baz"}).in_sequence(seq)
-      @database.expects(:add).with("Foo", "bar", "baz")
+      @database.expects(:add).with("Foo", "bar", "baz", {})
       @console.expects(:menu).returns(nil).in_sequence(seq)
       @console.expects(:menu).returns(:save).in_sequence(seq)
       @database.expects(:save).in_sequence(seq)
+      @console.expects(:menu).returns(:new_group).in_sequence(seq)
+      @console.expects(:get_new_group).returns(:group => 'Blah').in_sequence(seq)
+      @console.expects(:menu).with(:group => 'Blah').returns(:top).in_sequence(seq)
+      @console.expects(:menu).returns(:group => 'Huge').in_sequence(seq)
+      @console.expects(:menu).with(:group => 'Huge').returns(nil).in_sequence(seq)
+      @console.expects(:menu).with(:group => 'Huge').returns(:new).in_sequence(seq)
+      @console.expects(:get_new_entry).returns({:site => "Bar", :username => "bar", :password => "baz"}).in_sequence(seq)
+      @database.expects(:add).with("Bar", "bar", "baz", :group => 'Huge')
+      @console.expects(:menu).with(:group => 'Huge').returns(:top).in_sequence(seq)
       @console.expects(:menu).returns(:quit).in_sequence(seq)
 
       runner = Runner.new(["-d", keyrack_dir])
@@ -67,10 +76,9 @@ module Keyrack
       rsa.expects(:public_encrypt).with(dump).returns("encrypted dump")
 
       # Store setup
-      store_path = 'database'
-      @console.expects(:store_setup).returns('type' => 'filesystem', 'path' => store_path).in_sequence(seq)
+      @console.expects(:store_setup).returns('type' => 'filesystem', 'path' => 'database').in_sequence(seq)
       store = mock('filesystem store')
-      Store::Filesystem.expects(:new).with('path' => store_path).returns(store).in_sequence(seq)
+      Store::Filesystem.expects(:new).with('path' => File.join(keyrack_dir, 'database')).returns(store).in_sequence(seq)
 
       Database.expects(:new).with('foobar', 'barfoo', store).returns(@database).in_sequence(seq)
       @console.expects(:database=).with(@database).in_sequence(seq)
@@ -91,7 +99,7 @@ module Keyrack
       assert File.exist?(expected_config_file)
       expected_config = {
         'rsa' => expected_rsa_file, 'aes' => expected_aes_file,
-        'store' => { 'type' => 'filesystem', 'path' => store_path }
+        'store' => { 'type' => 'filesystem', 'path' => File.join(keyrack_dir, 'database') }
       }
       assert_equal expected_config, YAML.load_file(expected_config_file)
     end

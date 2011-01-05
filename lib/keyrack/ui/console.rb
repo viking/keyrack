@@ -26,7 +26,8 @@ module Keyrack
           @highline.say("===== #{@highline.color(options[:group], :green)} =====")
         end
 
-        @database.sites(options).each do |site|
+        sites = @database.sites(options)
+        sites.each do |site|
           entry = @database.get(site, options)
           choices[index.to_s] = entry
           @highline.say("% 2d. %s [%s]" % [index, site, entry[:username]])
@@ -34,6 +35,10 @@ module Keyrack
         end
 
         @highline.say(" n. New entry")
+        if !sites.empty?
+          choices['d'] = :delete
+          @highline.say(" d. Delete entry")
+        end
         if !options[:group]
           choices['g'] = :new_group
           @highline.say(" g. New group")
@@ -129,6 +134,28 @@ module Keyrack
         end
 
         result
+      end
+
+      def delete_entry(options = {})
+        choices = {'c' => :cancel}
+        index = 1
+        @highline.say("Choose entry to delete:")
+        @database.sites(options).each do |site|
+          entry = @database.get(site, options)
+          choices[index.to_s] = {:site => site, :username => entry[:username]}
+          @highline.say("% 2d. %s [%s]" % [index, site, entry[:username]])
+          index += 1
+        end
+        @highline.say(" c. Cancel")
+
+        answer = @highline.ask(" ?  ") { |q| q.in = choices.keys }
+        result = choices[answer]
+        if result != :cancel
+          entry = @highline.color("#{result[:site]} [#{result[:username]}]", :red)
+          if @highline.agree("You're about to delete #{entry}.  Are you sure? [yn] ")
+            @database.delete(result[:site], options)
+          end
+        end
       end
     end
   end

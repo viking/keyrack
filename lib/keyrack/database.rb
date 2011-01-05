@@ -43,6 +43,12 @@ module Keyrack
       @dirty = false
     end
 
+    def delete(site, options = {})
+      hash = options[:group] ? @data[options[:group]] : @data
+      hash.delete(site)
+      @dirty = true
+    end
+
     private
       def decrypt
         data = @store.read

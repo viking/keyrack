@@ -44,6 +44,8 @@ module Keyrack
       @console.expects(:menu).returns(nil).in_sequence(seq)
       @console.expects(:menu).returns(:save).in_sequence(seq)
       @database.expects(:save).in_sequence(seq)
+      @console.expects(:menu).returns(:delete).in_sequence(seq)
+      @console.expects(:delete_entry).with({}).in_sequence(seq)
       @console.expects(:menu).returns(:new_group).in_sequence(seq)
       @console.expects(:get_new_group).returns(:group => 'Blah').in_sequence(seq)
       @console.expects(:menu).with(:group => 'Blah').returns(:top).in_sequence(seq)
@@ -52,6 +54,8 @@ module Keyrack
       @console.expects(:menu).with(:group => 'Huge').returns(:new).in_sequence(seq)
       @console.expects(:get_new_entry).returns({:site => "Bar", :username => "bar", :password => "baz"}).in_sequence(seq)
       @database.expects(:add).with("Bar", "bar", "baz", :group => 'Huge')
+      @console.expects(:menu).with(:group => "Huge").returns(:delete).in_sequence(seq)
+      @console.expects(:delete_entry).with(:group => 'Huge').in_sequence(seq)
       @console.expects(:menu).with(:group => 'Huge').returns(:top).in_sequence(seq)
       @console.expects(:menu).returns(:quit).in_sequence(seq)
 

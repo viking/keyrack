@@ -62,6 +62,8 @@ module Keyrack
         when :new
           result = @ui.get_new_entry
           @database.add(result[:site], result[:username], result[:password], options)
+        when :delete
+          @ui.delete_entry(options)
         when :new_group
           options = @ui.get_new_group
         when :save

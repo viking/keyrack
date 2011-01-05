@@ -9,8 +9,9 @@ module Keyrack
             :username => 'username', :password => 'password'
           })
         end
-        @highline = mock('highline')
+        @highline = stub('highline')
         @highline.stubs(:color).with("Keyrack Main Menu", :yellow).returns("yellowKeyrack Main Menu")
+        @highline.stubs(:say)
         HighLine.expects(:new).returns(@highline)
         @console = Console.new
       end
@@ -20,12 +21,12 @@ module Keyrack
         @highline.expects(:say).with("=== yellowKeyrack Main Menu ===")
         @highline.expects(:say).with(" 1. Twitter [username]")
         @highline.expects(:say).with(" n. New entry")
+        @highline.expects(:say).with(" d. Delete entry")
         @highline.expects(:say).with(" g. New group")
         @highline.expects(:say).with(" q. Quit")
 
         question = mock('question')
-        question.expects(:in=).with(%w{n q 1 g})
-        @highline.expects(:ask).yields(question).returns('1')
+        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q 1 d g}) }).returns('1')
         @console.expects(:Copier).with('password')
         @highline.expects(:say).with("The password has been copied to your clipboard.")
         assert_nil @console.menu
@@ -34,30 +35,44 @@ module Keyrack
       def test_select_new_from_menu
         @console.database = @database
 
-        @highline.expects(:say).with("=== yellowKeyrack Main Menu ===")
-        @highline.expects(:say).with(" 1. Twitter [username]")
-        @highline.expects(:say).with(" n. New entry")
-        @highline.expects(:say).with(" g. New group")
-        @highline.expects(:say).with(" q. Quit")
+        # === yellowKeyrack Main Menu ===
+        #  1. Twitter [username]
+        #  n. New entry
+        #  d. Delete entry
+        #  g. New group
+        #  q. Quit
+
+        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q 1 d g}) }).returns('n')
+        assert_equal :new, @console.menu
+      end
+
+      def test_select_delete_from_menu
+        @console.database = @database
+
+        # === yellowKeyrack Main Menu ===
+        #  1. Twitter [username]
+        #  n. New entry
+        #  d. Delete entry
+        #  g. New group
+        #  q. Quit
 
         question = mock('question')
-        question.expects(:in=).with(%w{n q 1 g})
-        @highline.expects(:ask).yields(question).returns('n')
-        assert_equal :new, @console.menu
+        question.expects(:in=).with(%w{n q 1 d g})
+        @highline.expects(:ask).yields(question).returns('d')
+        assert_equal :delete, @console.menu
       end
 
       def test_select_quit_from_menu
         @console.database = @database
 
-        @highline.expects(:say).with("=== yellowKeyrack Main Menu ===")
-        @highline.expects(:say).with(" 1. Twitter [username]")
-        @highline.expects(:say).with(" n. New entry")
-        @highline.expects(:say).with(" g. New group")
-        @highline.expects(:say).with(" q. Quit")
+        # === yellowKeyrack Main Menu ===
+        #  1. Twitter [username]
+        #  n. New entry
+        #  d. Delete entry
+        #  g. New group
+        #  q. Quit
 
-        question = mock('question')
-        question.expects(:in=).with(%w{n q 1 g})
-        @highline.expects(:ask).yields(question).returns('q')
+        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q 1 d g}) }).returns('q')
         assert_equal :quit, @console.menu
       end
 
@@ -65,15 +80,7 @@ module Keyrack
         @console.database = @database
         @database.stubs(:dirty?).returns(true)
 
-        @highline.expects(:say).with("=== yellowKeyrack Main Menu ===")
-        @highline.expects(:say).with(" 1. Twitter [username]")
-        @highline.expects(:say).with(" n. New entry")
-        @highline.expects(:say).with(" g. New group")
-        @highline.expects(:say).with(" s. Save")
-        @highline.expects(:say).with(" q. Quit")
-
-        question = mock('question', :in= => nil)
-        @highline.expects(:ask).yields(question).returns('q')
+        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q 1 d g s}) }).returns('q')
         @highline.expects(:agree).with("Really quit?  You have unsaved changes! [yn] ").returns(false)
         assert_equal nil, @console.menu
       end
@@ -82,16 +89,8 @@ module Keyrack
         @console.database = @database
         @database.stubs(:dirty?).returns(true)
 
-        @highline.expects(:say).with("=== yellowKeyrack Main Menu ===")
-        @highline.expects(:say).with(" 1. Twitter [username]")
-        @highline.expects(:say).with(" n. New entry")
-        @highline.expects(:say).with(" g. New group")
         @highline.expects(:say).with(" s. Save")
-        @highline.expects(:say).with(" q. Quit")
-
-        question = mock('question')
-        question.expects(:in=).with(%w{n q 1 g s})
-        @highline.expects(:ask).yields(question).returns('s')
+        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q 1 d g s}) }).returns('s')
         assert_equal :save, @console.menu
       end
 
@@ -99,17 +98,9 @@ module Keyrack
         @console.database = @database
         @database.stubs(:groups).returns(["Blargh"])
 
-        @highline.expects(:say).with("=== yellowKeyrack Main Menu ===")
         @highline.expects(:color).with('Blargh', :green).returns('greenBlargh')
         @highline.expects(:say).with(" 1. greenBlargh")
-        @highline.expects(:say).with(" 2. Twitter [username]")
-        @highline.expects(:say).with(" n. New entry")
-        @highline.expects(:say).with(" g. New group")
-        @highline.expects(:say).with(" q. Quit")
-
-        question = mock('question')
-        question.expects(:in=).with(%w{n q 1 2 g})
-        @highline.expects(:ask).yields(question).returns('1')
+        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q 1 2 d g}) }).returns('1')
         assert_equal({:group => 'Blargh'}, @console.menu)
       end
 
@@ -122,12 +113,11 @@ module Keyrack
         @highline.expects(:say).with("===== greenFoo =====")
         @highline.expects(:say).with(" 1. Facebook [username]")
         @highline.expects(:say).with(" n. New entry")
+        @highline.expects(:say).with(" d. Delete entry")
         @highline.expects(:say).with(" t. Top level menu")
         @highline.expects(:say).with(" q. Quit")
 
-        question = mock('question')
-        question.expects(:in=).with(%w{n q 1 t})
-        @highline.expects(:ask).yields(question).returns('1')
+        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q 1 d t}) }).returns('1')
         @console.expects(:Copier).with('password')
         @highline.expects(:say).with("The password has been copied to your clipboard.")
         assert_nil @console.menu(:group => 'Foo')
@@ -208,11 +198,52 @@ module Keyrack
       end
 
       def test_get_new_group
-        seq = sequence("new group")
         @highline.expects(:ask).with("Group: ").yields(mock {
           expects(:validate=).with(/^\w[\w\s]*$/)
-        }).returns("Foo").in_sequence(seq)
+        }).returns("Foo")
         assert_equal({:group => "Foo"}, @console.get_new_group)
+      end
+
+      def test_delete_entry
+        @console.database = @database
+        @database.stubs(:sites).returns(%w{Twitter Facebook})
+        @database.stubs(:get).with('Facebook', {}).returns({
+          :username => 'username', :password => 'password'
+        })
+
+        seq = sequence("deleting")
+        @highline.expects(:say).with("Choose entry to delete:").in_sequence(seq)
+        @highline.expects(:say).with(" 1. Twitter [username]").in_sequence(seq)
+        @highline.expects(:say).with(" 2. Facebook [username]").in_sequence(seq)
+        @highline.expects(:say).with(" c. Cancel").in_sequence(seq)
+        @highline.expects(:ask).yields(mock {
+          expects(:in=).with(%w{c 1 2})
+        }).returns('1').in_sequence(seq)
+        @highline.expects(:color).with("Twitter [username]", :red).returns("redTwitter").in_sequence(seq)
+        @highline.expects(:agree).with("You're about to delete redTwitter.  Are you sure? [yn] ").returns(true).in_sequence(seq)
+        @database.expects(:delete).with("Twitter", {}).in_sequence(seq)
+        @console.delete_entry
+      end
+
+      def test_delete_group_entry
+        @console.database = @database
+        @database.stubs(:sites).returns(%w{Quora Foursquare})
+        @database.stubs(:get).with(kind_of(String), {:group => 'Social'}).returns({
+          :username => 'username', :password => 'password'
+        })
+
+        seq = sequence("deleting")
+        @highline.expects(:say).with("Choose entry to delete:").in_sequence(seq)
+        @highline.expects(:say).with(" 1. Quora [username]").in_sequence(seq)
+        @highline.expects(:say).with(" 2. Foursquare [username]").in_sequence(seq)
+        @highline.expects(:say).with(" c. Cancel").in_sequence(seq)
+        @highline.expects(:ask).yields(mock {
+          expects(:in=).with(%w{c 1 2})
+        }).returns('2').in_sequence(seq)
+        @highline.expects(:color).with("Foursquare [username]", :red).returns("redFoursquare").in_sequence(seq)
+        @highline.expects(:agree).with("You're about to delete redFoursquare.  Are you sure? [yn] ").returns(true).in_sequence(seq)
+        @database.expects(:delete).with("Foursquare", :group => 'Social').in_sequence(seq)
+        @console.delete_entry(:group => 'Social')
       end
     end
   end

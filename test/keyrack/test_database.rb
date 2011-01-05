@@ -63,5 +63,18 @@ module Keyrack
       expected = {:username => 'dudeguy', :password => 'secret'}
       assert_equal expected, @database.get('Twitter', :group => "Social")
     end
+
+    def test_delete
+      @database.delete('Twitter')
+      assert_equal [], @database.sites
+      assert @database.dirty?
+    end
+
+    def test_delete_group_entry
+      @database.add('Facebook', 'dudeguy', 'secret', :group => "Social")
+      @database.delete('Facebook', :group => 'Social')
+      assert_equal [], @database.sites(:group => 'Social')
+      assert_equal ['Twitter'], @database.sites
+    end
   end
 end

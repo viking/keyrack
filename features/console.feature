@@ -63,4 +63,17 @@ Feature: Console runner
     * the output should contain "1. Twitter [dudeguy]"
     * I type "1" for Twitter
     * my clipboard should contain "kittens"
+
+    * the output should contain "d. Delete entry"
+    * I type "d"
+    * the output should contain "1. Twitter [dudeguy]"
+    * I type "1"
+    * the output should contain "Are you sure?"
+    * I type "y"
+    * the output should contain "t. Top level menu"
+    * I type "t"
+
+    * the output should contain "Main Menu"
     * I type "q" to quit
+    * the output should contain "Really quit?" (since the database is dirty)
+    * I type "y"

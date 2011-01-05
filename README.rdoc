@@ -7,65 +7,29 @@ encryption.
 
   gem install keyrack
 
-== Configuration
-
-=== Format
-
-The configuration file is a YAML file that requires the following data:
-* *key*: path to the RSA file you want to use
-* *store*: options for store (see below)
-
-=== Store types
-
-==== filesystem
-* Required options:
-  * *path*: path to the keyrack database
-
-==== ssh
-* Required options:
-  * *host*: host name
-  * *user*: user name
-  * *path*: path to the keyrack database on remote host
-
-=== Examples
-
-==== Filesystem example
-
-  store:
-    type: filesystem
-    path: ~/.keyrack/database
-  key: ~/.keyrack/id_rsa
-
-==== SSH example
-
-  store:
-    type: ssh
-    host: example.com
-    user: foobar
-    path: ~/junk.dat
-  key: ~/.keyrack/id_rsa
-
 == Usage
 
-  keyrack [-c path-to-config]
+  keyrack [-d directory]
 
-By default, Keyrack will look for <b>~/.keyrack/config</b>.  The database file
-(merely a RSA-encrypted Ruby hash) will be created on save if it doesn't exist.
-It's a good idea to generate a seperate RSA key for use with Keyrack, especially
-if you are using the SSH store and are connecting from multiple locations.  To
-generate a key, try: <code>ssh-keygen -C keyrack -f ~/.keyrack/id_rsa</code>
+The first time you run Keyrack, it will present you with a series of prompts.
+You can specify the *-d* option if you want Keyrack to put its files somewhere
+other than *~/.keyrack*.
 
-Starting keyrack will display a simple menu in your terminal, like this:
+Running keyrack will display a simple menu in your terminal, like this:
 
+  === Keyrack Main Menu ===
   1. Twitter [foobar]
   2. Facebook [foobar@example.com]
-  3. Twitter [otherfoobar]
   n. Add new
+  d. Delete entry
+  g. New group
   s. Save
   q. Quit
 
 Selecting <b>1</b> in this case will copy the Twitter password for the foobar user
 to your clipboard.
+
+You can create groups to organize your sites.
 
 == Contributing to keyrack
 

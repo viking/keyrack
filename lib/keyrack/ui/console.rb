@@ -16,13 +16,14 @@ module Keyrack
 
         if !options[:group]
           # Can't have subgroups (yet?).
+          @highline.say("=== #{@highline.color("Keyrack Main Menu", :yellow)} ===")
           @database.groups.each do |group|
             choices[index.to_s] = {:group => group}
             @highline.say("% 2d. %s" % [index, @highline.color(group, :green)])
             index += 1
           end
         else
-          @highline.say("===== #{options[:group]} =====")
+          @highline.say("===== #{@highline.color(options[:group], :green)} =====")
         end
 
         @database.sites(options).each do |site|

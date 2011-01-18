@@ -11,3 +11,6 @@ require 'tempfile'
 require 'fileutils'
 require 'pty'
 require 'yaml'
+require 'test/unit/assertions'
+
+World(Test::Unit::Assertions)

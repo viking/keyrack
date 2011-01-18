@@ -4,7 +4,7 @@ source :rubygems
 #   gem "activesupport", ">= 2.3.5"
 gem 'net-scp', :require => 'net/scp'
 gem 'highline'
-gem 'viking-copier', :require => 'copier'
+gem 'copier'
 
 # Add dependencies to develop your gem here.
 # Include everything needed to run rake, tests, features, etc.

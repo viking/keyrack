@@ -1,5 +1,4 @@
 Before do
-  @aruba_io_wait_seconds = 2
   @fake_home = Dir::Tmpname.create('keyrack') { }
   Dir.mkdir(@fake_home)
   @old_home = ENV['HOME']
@@ -22,7 +21,7 @@ Then /the output should contain "([^"]+)"/ do |expected|
     sleep 1
   end
   @output = @out.read_nonblock(255)
-  @output.should include(expected)
+  assert @output.include?(expected)
 end
 
 Then %r{the output should match /([^/]+)/} do |expected|
@@ -33,11 +32,11 @@ Then %r{the output should match /([^/]+)/} do |expected|
     sleep 1
   end
   @output = @out.read_nonblock(255)
-  @output.should match(Regexp.new(expected))
+  assert @output.match(Regexp.new(expected))
 end
 
 Then /the output should also contain "([^"]+)"/ do |expected|
-  @output.should include(expected)
+  assert @output.include?(expected)
 end
 
 When /I type "([^"]+)"/ do |text|
@@ -52,5 +51,5 @@ end
 Then /my clipboard should contain "([^"]+)"/ do |expected|
   sleep 1
   result = %x{xclip -selection clipboard -o}.chomp
-  result.should == expected
+  assert_equal expected, result
 end

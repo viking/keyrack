@@ -14,44 +14,49 @@ module Keyrack
         choices = {'n' => :new, 'q' => :quit}
         index = 1
 
+        sites = @database.sites(options)
+        count = sites.length
+        count += @database.groups.length  if !options[:group]
+        width = count / 10
+
         if !options[:group]
           # Can't have subgroups (yet?).
           @highline.say("=== #{@highline.color("Keyrack Main Menu", :yellow)} ===")
           @database.groups.each do |group|
             choices[index.to_s] = {:group => group}
-            @highline.say("% 2d. %s" % [index, @highline.color(group, :green)])
+            @highline.say(" %#{width}d. %s" % [index, @highline.color(group, :green)])
             index += 1
           end
         else
           @highline.say("===== #{@highline.color(options[:group], :green)} =====")
         end
 
-        sites = @database.sites(options)
         sites.each do |site|
           entry = @database.get(site, options)
           choices[index.to_s] = entry
-          @highline.say("% 2d. %s [%s]" % [index, site, entry[:username]])
+          @highline.say(" %#{width}d. %s [%s]" % [index, site, entry[:username]])
           index += 1
         end
 
-        @highline.say(" n. New entry")
+        commands = "Commands: [n]ew"
         if !sites.empty?
           choices['d'] = :delete
-          @highline.say(" d. Delete entry")
+          commands << " [d]elete"
         end
         if !options[:group]
           choices['g'] = :new_group
-          @highline.say(" g. New group")
+          commands << " [g]roup"
         else
           choices['t'] = :top
-          @highline.say(" t. Top level menu")
+          commands << " [t]op"
         end
         if @database.dirty?
           choices['s'] = :save
-          @highline.say(" s. Save")
+          commands << " [s]ave"
         end
-        @highline.say(" q. Quit")
-        answer = @highline.ask(" ?  ") { |q| q.in = choices.keys }
+        commands << " [q]uit"
+        @highline.say(commands)
+        answer = @highline.ask(" ? ") { |q| q.in = choices.keys }
         result = choices[answer]
         case result
         when Symbol

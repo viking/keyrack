@@ -20,10 +20,7 @@ module Keyrack
         @console.database = @database
         @highline.expects(:say).with("=== yellowKeyrack Main Menu ===")
         @highline.expects(:say).with(" 1. Twitter [username]")
-        @highline.expects(:say).with(" n. New entry")
-        @highline.expects(:say).with(" d. Delete entry")
-        @highline.expects(:say).with(" g. New group")
-        @highline.expects(:say).with(" q. Quit")
+        @highline.expects(:say).with("Commands: [n]ew [d]elete [g]roup [q]uit")
 
         question = mock('question')
         @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q 1 d g}) }).returns('1')
@@ -89,7 +86,7 @@ module Keyrack
         @console.database = @database
         @database.stubs(:dirty?).returns(true)
 
-        @highline.expects(:say).with(" s. Save")
+        @highline.expects(:say).with { |string| string =~ /\[s\]ave/ }
         @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q 1 d g s}) }).returns('s')
         assert_equal :save, @console.menu
       end
@@ -112,10 +109,7 @@ module Keyrack
         @highline.expects(:color).with("Foo", :green).returns("greenFoo")
         @highline.expects(:say).with("===== greenFoo =====")
         @highline.expects(:say).with(" 1. Facebook [username]")
-        @highline.expects(:say).with(" n. New entry")
-        @highline.expects(:say).with(" d. Delete entry")
-        @highline.expects(:say).with(" t. Top level menu")
-        @highline.expects(:say).with(" q. Quit")
+        @highline.expects(:say).with("Commands: [n]ew [d]elete [t]op [q]uit")
 
         @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q 1 d t}) }).returns('1')
         @console.expects(:Copier).with('password')

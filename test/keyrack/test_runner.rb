@@ -30,9 +30,9 @@ module Keyrack
       seq = sequence('ui sequence')
       @console.expects(:get_password).returns('secret').in_sequence(seq)
       rsa = mock("rsa key")
-      Utils.expects(:open_rsa_key).with(rsa_path, 'secret').returns(rsa).in_sequence(seq)
+      Utils.expects(:open_rsa_key).with(File.expand_path(rsa_path, keyrack_dir), 'secret').returns(rsa).in_sequence(seq)
       aes = {'key' => '12345', 'iv' => '54321'}
-      Utils.expects(:open_aes_data).with(aes_path, rsa).returns(aes).in_sequence(seq)
+      Utils.expects(:open_aes_data).with(File.expand_path(aes_path, keyrack_dir), rsa).returns(aes).in_sequence(seq)
       store = mock('filesystem store')
       Store::Filesystem.expects(:new).with('path' => store_path).returns(store).in_sequence(seq)
       Database.expects(:new).with('12345', '54321', store).returns(@database).in_sequence(seq)

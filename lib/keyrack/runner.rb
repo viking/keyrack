@@ -13,8 +13,8 @@ module Keyrack
       if Dir.exist?(@config_path)
         @options = YAML.load_file(File.join(@config_path, "config"))
         password = @ui.get_password
-        rsa_key = Utils.open_rsa_key(@options['rsa'], password)
-        aes_data = Utils.open_aes_data(@options['aes'], rsa_key)
+        rsa_key = Utils.open_rsa_key(File.expand_path(@options['rsa'], @config_path), password)
+        aes_data = Utils.open_aes_data(File.expand_path(@options['aes'], @config_path), rsa_key)
       else
         Dir.mkdir(@config_path)
         @options = {}

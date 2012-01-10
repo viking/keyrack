@@ -26,16 +26,12 @@ Running keyrack will display a simple menu in your terminal, like this:
   === Keyrack Main Menu ===
   1. Twitter [foobar]
   2. Facebook [foobar@example.com]
-  n. Add new
-  d. Delete entry
-  g. New group
-  s. Save
-  q. Quit
+  Commands: [n]ew [d]elete [g]roup [s]ave [q]uit
 
 Selecting <b>1</b> in this case will copy the Twitter password for the foobar user
 to your clipboard.
 
-You can create groups to organize your sites.
+You can create groups (using the 'group' command) to organize your sites.
 
 == Contributing to keyrack
 

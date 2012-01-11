@@ -17,15 +17,41 @@ module Keyrack
       end
 
       def test_select_entry_from_menu
+        seq = sequence('say')
         @console.database = @database
         @highline.expects(:say).with("=== yellowKeyrack Main Menu ===")
         @highline.expects(:say).with(" 1. Twitter [username]")
-        @highline.expects(:say).with("Commands: [n]ew [d]elete [g]roup [q]uit")
+        @highline.expects(:say).with("Mode: copy")
+        @highline.expects(:say).with("Commands: [n]ew [d]elete [g]roup [m]ode [q]uit")
 
         question = mock('question')
-        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q 1 d g}) }).returns('1')
+        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 d g}) }).returns('1')
         @console.expects(:Copier).with('password')
         @highline.expects(:say).with("The password has been copied to your clipboard.")
+        assert_nil @console.menu
+      end
+
+      def test_select_entry_from_menu_in_print_mode
+        seq = sequence('say')
+        @console.database = @database
+        @console.mode = :print
+        @highline.expects(:say).with("=== yellowKeyrack Main Menu ===")
+        @highline.expects(:say).with(" 1. Twitter [username]")
+        @highline.expects(:say).with("Mode: print")
+        @highline.expects(:say).with("Commands: [n]ew [d]elete [g]roup [m]ode [q]uit")
+
+        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 d g}) }).returns('1')
+        @highline.expects(:color).with('password', :cyan).returns('cyan[password]').in_sequence(seq)
+        question = mock do
+          expects(:character=).with(true)
+          expects(:echo=).with(false)
+          expects(:overwrite=).with(true)
+        end
+        @highline.expects(:ask).
+          with('Here you go: cyan[password]. Done? ').
+          yields(question).
+          returns('')
+
         assert_nil @console.menu
       end
 
@@ -39,7 +65,7 @@ module Keyrack
         #  g. New group
         #  q. Quit
 
-        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q 1 d g}) }).returns('n')
+        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 d g}) }).returns('n')
         assert_equal :new, @console.menu
       end
 
@@ -54,7 +80,7 @@ module Keyrack
         #  q. Quit
 
         question = mock('question')
-        question.expects(:in=).with(%w{n q 1 d g})
+        question.expects(:in=).with(%w{n q m 1 d g})
         @highline.expects(:ask).yields(question).returns('d')
         assert_equal :delete, @console.menu
       end
@@ -69,7 +95,7 @@ module Keyrack
         #  g. New group
         #  q. Quit
 
-        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q 1 d g}) }).returns('q')
+        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 d g}) }).returns('q')
         assert_equal :quit, @console.menu
       end
 
@@ -77,7 +103,7 @@ module Keyrack
         @console.database = @database
         @database.stubs(:dirty?).returns(true)
 
-        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q 1 d g s}) }).returns('q')
+        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 d g s}) }).returns('q')
         @highline.expects(:agree).with("Really quit?  You have unsaved changes! [yn] ").returns(false)
         assert_equal nil, @console.menu
       end
@@ -87,7 +113,7 @@ module Keyrack
         @database.stubs(:dirty?).returns(true)
 
         @highline.expects(:say).with { |string| string =~ /\[s\]ave/ }
-        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q 1 d g s}) }).returns('s')
+        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 d g s}) }).returns('s')
         assert_equal :save, @console.menu
       end
 
@@ -97,7 +123,7 @@ module Keyrack
 
         @highline.expects(:color).with('Blargh', :green).returns('greenBlargh')
         @highline.expects(:say).with(" 1. greenBlargh")
-        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q 1 2 d g}) }).returns('1')
+        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 d g}) }).returns('1')
         assert_equal({:group => 'Blargh'}, @console.menu)
       end
 
@@ -109,9 +135,10 @@ module Keyrack
         @highline.expects(:color).with("Foo", :green).returns("greenFoo")
         @highline.expects(:say).with("===== greenFoo =====")
         @highline.expects(:say).with(" 1. Facebook [username]")
-        @highline.expects(:say).with("Commands: [n]ew [d]elete [t]op [q]uit")
+        @highline.expects(:say).with("Mode: copy")
+        @highline.expects(:say).with("Commands: [n]ew [d]elete [t]op [m]ode [q]uit")
 
-        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q 1 d t}) }).returns('1')
+        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 d t}) }).returns('1')
         @console.expects(:Copier).with('password')
         @highline.expects(:say).with("The password has been copied to your clipboard.")
         assert_nil @console.menu(:group => 'Foo')
@@ -238,6 +265,15 @@ module Keyrack
         @highline.expects(:agree).with("You're about to delete redFoursquare.  Are you sure? [yn] ").returns(true).in_sequence(seq)
         @database.expects(:delete).with("Foursquare", :group => 'Social').in_sequence(seq)
         @console.delete_entry(:group => 'Social')
+      end
+
+      def test_switch_mode_from_menu
+        @console.database = @database
+        @console.mode = :copy
+
+        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 d g}) }).returns('m')
+        assert_nil @console.menu
+        assert_equal :print, @console.mode
       end
     end
   end

@@ -1,9 +1,11 @@
 module Keyrack
   module UI
     class Console
-      attr_accessor :database
+      attr_accessor :database, :mode
+
       def initialize
         @highline = HighLine.new
+        @mode = :copy
       end
 
       def get_password
@@ -11,7 +13,7 @@ module Keyrack
       end
 
       def menu(options = {})
-        choices = {'n' => :new, 'q' => :quit}
+        choices = {'n' => :new, 'q' => :quit, 'm' => :mode}
         index = 1
 
         sites = @database.sites(options)
@@ -38,6 +40,7 @@ module Keyrack
           index += 1
         end
 
+        @highline.say("Mode: #{mode}")
         commands = "Commands: [n]ew"
         if !sites.empty?
           choices['d'] = :delete
@@ -54,13 +57,16 @@ module Keyrack
           choices['s'] = :save
           commands << " [s]ave"
         end
-        commands << " [q]uit"
+        commands << " [m]ode [q]uit"
         @highline.say(commands)
         answer = @highline.ask(" ? ") { |q| q.in = choices.keys }
         result = choices[answer]
         case result
         when Symbol
           if result == :quit && @database.dirty? && !@highline.agree("Really quit?  You have unsaved changes! [yn] ")
+            nil
+          elsif result == :mode
+            @mode = @mode == :copy ? :print : :copy
             nil
           else
             result
@@ -69,8 +75,13 @@ module Keyrack
           if result.has_key?(:group)
             result
           else
-            Copier(result[:password])
-            @highline.say("The password has been copied to your clipboard.")
+            if mode == :copy
+              Copier(result[:password])
+              @highline.say("The password has been copied to your clipboard.")
+            elsif mode == :print
+              password = @highline.color(result[:password], :cyan)
+              @highline.ask("Here you go: #{password}. Done? ") { |q| q.character = true; q.overwrite = true; q.echo = false }
+            end
             nil
           end
         end

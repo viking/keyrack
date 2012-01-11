@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "keyrack"
-  s.version = "0.2.3"
+  s.version = "0.3.0.pre"
 
-  s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
+  s.required_rubygems_version = Gem::Requirement.new("> 1.3.1") if s.respond_to? :required_rubygems_version=
   s.authors = ["Jeremy Stephens"]
-  s.date = "2012-01-01"
+  s.date = "2012-01-11"
   s.description = "Simple password manager with local/remote database storage and RSA encryption."
   s.email = "viking@pillageandplunder.net"
   s.executables = ["keyrack"]
@@ -58,7 +58,7 @@ Gem::Specification.new do |s|
   s.homepage = "http://github.com/viking/keyrack"
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
-  s.rubygems_version = "1.8.10"
+  s.rubygems_version = "1.8.11"
   s.summary = "Simple password manager"
   s.test_files = [
     "test/helper.rb",
@@ -83,6 +83,7 @@ Gem::Specification.new do |s|
       s.add_development_dependency(%q<rcov>, [">= 0"])
       s.add_development_dependency(%q<mocha>, [">= 0"])
       s.add_development_dependency(%q<cucumber>, [">= 0"])
+      s.add_development_dependency(%q<test-unit>, [">= 0"])
     else
       s.add_dependency(%q<net-scp>, [">= 0"])
       s.add_dependency(%q<highline>, [">= 0"])
@@ -92,6 +93,7 @@ Gem::Specification.new do |s|
       s.add_dependency(%q<rcov>, [">= 0"])
       s.add_dependency(%q<mocha>, [">= 0"])
       s.add_dependency(%q<cucumber>, [">= 0"])
+      s.add_dependency(%q<test-unit>, [">= 0"])
     end
   else
     s.add_dependency(%q<net-scp>, [">= 0"])
@@ -102,6 +104,7 @@ Gem::Specification.new do |s|
     s.add_dependency(%q<rcov>, [">= 0"])
     s.add_dependency(%q<mocha>, [">= 0"])
     s.add_dependency(%q<cucumber>, [">= 0"])
+    s.add_dependency(%q<test-unit>, [">= 0"])
   end
 end
 

@@ -108,7 +108,7 @@ module Keyrack
         if @highline.agree("Generate password? [yn] ")
           loop do
             password = Utils.generate_password
-            if @highline.agree("Generated #{@highline.color(password, :blue)}.  Sound good? [yn] ")
+            if @highline.agree("Generated #{@highline.color(password, :cyan)}.  Sound good? [yn] ")
               result[:password] = password
               break
             end

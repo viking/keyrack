@@ -180,11 +180,11 @@ module Keyrack
         @highline.expects(:ask).with("Username: ").returns("bar").in_sequence(seq)
         @highline.expects(:agree).with("Generate password? [yn] ").returns(true).in_sequence(seq)
         Utils.expects(:generate_password).returns('foobar').in_sequence(seq)
-        @highline.expects(:color).with('foobar', :blue).returns('bluefoobar').in_sequence(seq)
-        @highline.expects(:agree).with("Generated bluefoobar.  Sound good? [yn] ").returns(false).in_sequence(seq)
+        @highline.expects(:color).with('foobar', :cyan).returns('cyanfoobar').in_sequence(seq)
+        @highline.expects(:agree).with("Generated cyanfoobar.  Sound good? [yn] ").returns(false).in_sequence(seq)
         Utils.expects(:generate_password).returns('foobar').in_sequence(seq)
-        @highline.expects(:color).with('foobar', :blue).returns('bluefoobar').in_sequence(seq)
-        @highline.expects(:agree).with("Generated bluefoobar.  Sound good? [yn] ").returns(true).in_sequence(seq)
+        @highline.expects(:color).with('foobar', :cyan).returns('cyanfoobar').in_sequence(seq)
+        @highline.expects(:agree).with("Generated cyanfoobar.  Sound good? [yn] ").returns(true).in_sequence(seq)
         assert_equal({:site => "Foo", :username => "bar", :password => "foobar"}, @console.get_new_entry)
       end
 
@@ -206,7 +206,7 @@ module Keyrack
 
       def test_store_setup_for_filesystem
         @highline.expects(:choose).yields(mock {
-          expects(:header=).with("Choose storage type:")
+          expects(:header=).with("Choose storage type")
           expects(:choices).with("filesystem", "ssh")
         }).returns("filesystem")
 
@@ -217,7 +217,7 @@ module Keyrack
       def test_store_setup_for_ssh
         seq = sequence("store setup")
         @highline.expects(:choose).yields(mock {
-          expects(:header=).with("Choose storage type:")
+          expects(:header=).with("Choose storage type")
           expects(:choices).with("filesystem", "ssh")
         }).returns("ssh").in_sequence(seq)
         @highline.expects(:ask).with("Host: ").returns("example.com").in_sequence(seq)

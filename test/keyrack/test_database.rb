@@ -92,7 +92,7 @@ module Keyrack
       expected_2 = {:username => 'foobar', :password => 'secret'}
       assert_equal expected_2, @database.get('Facebook', 'foobar')
       assert_equal [expected_1, expected_2], @database.get('Facebook')
-      assert_equal ['Twitter', 'Facebook'], @database.sites
+      assert_equal ['Facebook', 'Twitter'], @database.sites
     end
 
     def test_get_missing_entry_by_site_and_username

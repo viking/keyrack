@@ -14,4 +14,5 @@ group :development do
   gem "rcov", ">= 0"
   gem "mocha", :require => false
   gem "cucumber"
+  gem 'test-unit'
 end

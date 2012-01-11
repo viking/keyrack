@@ -21,7 +21,7 @@ Then /the output should contain "([^"]+)"/ do |expected|
     sleep 1
   end
   @output = @out.read_nonblock(255)
-  assert @output.include?(expected)
+  assert @output.include?(expected), "Output: #{@output.inspect}"
 end
 
 Then %r{the output should match /([^/]+)/} do |expected|
@@ -52,4 +52,10 @@ Then /my clipboard should contain "([^"]+)"/ do |expected|
   sleep 1
   result = %x{xclip -selection clipboard -o}.chomp
   assert_equal expected, result
+end
+
+Then /my clipboard should match "([^"]+)"/ do |expected|
+  sleep 1
+  result = %x{xclip -selection clipboard -o}.chomp
+  assert_match Regexp.new(expected), result
 end

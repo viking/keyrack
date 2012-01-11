@@ -4,10 +4,14 @@ module Keyrack
   module UI
     class TestConsole < Test::Unit::TestCase
       def setup
-        @database = stub('database', :sites => %w{Twitter}, :groups => [], :dirty? => false) do
+        @database = stub('database', :sites => %w{Twitter Google}, :groups => [], :dirty? => false) do
           stubs(:get).with('Twitter', {}).returns({
             :username => 'username', :password => 'password'
           })
+          stubs(:get).with('Google', {}).returns([
+            { :username => 'username_1', :password => 'password' },
+            { :username => 'username_2', :password => 'password' }
+          ])
         end
         @highline = stub('highline')
         @highline.stubs(:color).with("Keyrack Main Menu", :yellow).returns("yellowKeyrack Main Menu")
@@ -21,11 +25,13 @@ module Keyrack
         @console.database = @database
         @highline.expects(:say).with("=== yellowKeyrack Main Menu ===")
         @highline.expects(:say).with(" 1. Twitter [username]")
+        @highline.expects(:say).with(" 2. Google [username_1]")
+        @highline.expects(:say).with(" 3. Google [username_2]")
         @highline.expects(:say).with("Mode: copy")
         @highline.expects(:say).with("Commands: [n]ew [d]elete [g]roup [m]ode [q]uit")
 
         question = mock('question')
-        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 d g}) }).returns('1')
+        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 d g}) }).returns('1')
         @console.expects(:Copier).with('password')
         @highline.expects(:say).with("The password has been copied to your clipboard.")
         assert_nil @console.menu
@@ -37,10 +43,12 @@ module Keyrack
         @console.mode = :print
         @highline.expects(:say).with("=== yellowKeyrack Main Menu ===")
         @highline.expects(:say).with(" 1. Twitter [username]")
+        @highline.expects(:say).with(" 2. Google [username_1]")
+        @highline.expects(:say).with(" 3. Google [username_2]")
         @highline.expects(:say).with("Mode: print")
         @highline.expects(:say).with("Commands: [n]ew [d]elete [g]roup [m]ode [q]uit")
 
-        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 d g}) }).returns('1')
+        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 d g}) }).returns('1')
         @highline.expects(:color).with('password', :cyan).returns('cyan[password]').in_sequence(seq)
         question = mock do
           expects(:echo=).with(false)
@@ -67,7 +75,7 @@ module Keyrack
         #  g. New group
         #  q. Quit
 
-        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 d g}) }).returns('n')
+        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 d g}) }).returns('n')
         assert_equal :new, @console.menu
       end
 
@@ -82,7 +90,7 @@ module Keyrack
         #  q. Quit
 
         question = mock('question')
-        question.expects(:in=).with(%w{n q m 1 d g})
+        question.expects(:in=).with(%w{n q m 1 2 3 d g})
         @highline.expects(:ask).yields(question).returns('d')
         assert_equal :delete, @console.menu
       end
@@ -97,7 +105,7 @@ module Keyrack
         #  g. New group
         #  q. Quit
 
-        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 d g}) }).returns('q')
+        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 d g}) }).returns('q')
         assert_equal :quit, @console.menu
       end
 
@@ -105,7 +113,7 @@ module Keyrack
         @console.database = @database
         @database.stubs(:dirty?).returns(true)
 
-        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 d g s}) }).returns('q')
+        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 d g s}) }).returns('q')
         @highline.expects(:agree).with("Really quit?  You have unsaved changes! [yn] ").returns(false)
         assert_equal nil, @console.menu
       end
@@ -115,7 +123,7 @@ module Keyrack
         @database.stubs(:dirty?).returns(true)
 
         @highline.expects(:say).with { |string| string =~ /\[s\]ave/ }
-        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 d g s}) }).returns('s')
+        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 d g s}) }).returns('s')
         assert_equal :save, @console.menu
       end
 
@@ -125,7 +133,7 @@ module Keyrack
 
         @highline.expects(:color).with('Blargh', :green).returns('greenBlargh')
         @highline.expects(:say).with(" 1. greenBlargh")
-        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 d g}) }).returns('1')
+        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 4 d g}) }).returns('1')
         assert_equal({:group => 'Blargh'}, @console.menu)
       end
 
@@ -160,7 +168,7 @@ module Keyrack
         @highline.expects(:agree).with("Generate password? [yn] ").returns(false).in_sequence(seq)
         @highline.expects(:ask).with("Password: ").yields(mock { expects(:echo=).with(false) }).returns("baz").in_sequence(seq)
         @highline.expects(:ask).with("Password (again): ").yields(mock { expects(:echo=).with(false) }).returns("bar").in_sequence(seq)
-        @highline.expects(:say).with("Passwords didn't match.  Try again!").in_sequence(seq)
+        @highline.expects(:say).with("Passwords didn't match. Try again!").in_sequence(seq)
         @highline.expects(:ask).with("Password: ").yields(mock { expects(:echo=).with(false) }).returns("baz").in_sequence(seq)
         @highline.expects(:ask).with("Password (again): ").yields(mock { expects(:echo=).with(false) }).returns("baz").in_sequence(seq)
         assert_equal({:site => "Foo", :username => "bar", :password => "baz"}, @console.get_new_entry)
@@ -244,7 +252,25 @@ module Keyrack
         }).returns('1').in_sequence(seq)
         @highline.expects(:color).with("Twitter [username]", :red).returns("redTwitter").in_sequence(seq)
         @highline.expects(:agree).with("You're about to delete redTwitter.  Are you sure? [yn] ").returns(true).in_sequence(seq)
-        @database.expects(:delete).with("Twitter", {}).in_sequence(seq)
+        @database.expects(:delete).with("Twitter", 'username', {}).in_sequence(seq)
+        @console.delete_entry
+      end
+
+      def test_delete_one_entry_from_site_with_multiple_entries
+        @console.database = @database
+
+        seq = sequence("deleting")
+        @highline.expects(:say).with("Choose entry to delete:").in_sequence(seq)
+        @highline.expects(:say).with(" 1. Twitter [username]").in_sequence(seq)
+        @highline.expects(:say).with(" 2. Google [username_1]").in_sequence(seq)
+        @highline.expects(:say).with(" 3. Google [username_2]").in_sequence(seq)
+        @highline.expects(:say).with(" c. Cancel").in_sequence(seq)
+        @highline.expects(:ask).yields(mock {
+          expects(:in=).with(%w{c 1 2 3})
+        }).returns('3').in_sequence(seq)
+        @highline.expects(:color).with("Google [username_2]", :red).returns("redGoogle").in_sequence(seq)
+        @highline.expects(:agree).with("You're about to delete redGoogle.  Are you sure? [yn] ").returns(true).in_sequence(seq)
+        @database.expects(:delete).with("Google", 'username_2', {}).in_sequence(seq)
         @console.delete_entry
       end
 
@@ -265,7 +291,7 @@ module Keyrack
         }).returns('2').in_sequence(seq)
         @highline.expects(:color).with("Foursquare [username]", :red).returns("redFoursquare").in_sequence(seq)
         @highline.expects(:agree).with("You're about to delete redFoursquare.  Are you sure? [yn] ").returns(true).in_sequence(seq)
-        @database.expects(:delete).with("Foursquare", :group => 'Social').in_sequence(seq)
+        @database.expects(:delete).with("Foursquare", 'username', :group => 'Social').in_sequence(seq)
         @console.delete_entry(:group => 'Social')
       end
 
@@ -273,7 +299,7 @@ module Keyrack
         @console.database = @database
         @console.mode = :copy
 
-        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 d g}) }).returns('m')
+        @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 d g}) }).returns('m')
         assert_nil @console.menu
         assert_equal :print, @console.mode
       end

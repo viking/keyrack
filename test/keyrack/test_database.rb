@@ -26,7 +26,7 @@ module Keyrack
     def test_reading_existing_database
       database = Keyrack::Database.new(@key, @iv, @store)
       expected = {:username => 'username', :password => 'password'}
-      assert_equal(expected, database.get('Twitter'))
+      assert_equal(expected, database.get('Twitter', 'username'))
     end
 
     def test_sites
@@ -61,20 +61,51 @@ module Keyrack
     def test_add_with_top_level_group
       @database.add('Twitter', 'dudeguy', 'secret', :group => "Social")
       expected = {:username => 'dudeguy', :password => 'secret'}
-      assert_equal expected, @database.get('Twitter', :group => "Social")
+      assert_equal expected, @database.get('Twitter', 'dudeguy', :group => "Social")
     end
 
     def test_delete
-      @database.delete('Twitter')
+      @database.delete('Twitter', 'username')
       assert_equal [], @database.sites
       assert @database.dirty?
     end
 
+    def test_delete_non_existant_entry
+      @database.delete('Twitter', 'foobar')
+      assert_equal ['Twitter'], @database.sites
+      assert !@database.dirty?
+    end
+
     def test_delete_group_entry
       @database.add('Facebook', 'dudeguy', 'secret', :group => "Social")
-      @database.delete('Facebook', :group => 'Social')
+      @database.delete('Facebook', 'dudeguy', :group => 'Social')
       assert_equal [], @database.sites(:group => 'Social')
       assert_equal ['Twitter'], @database.sites
+    end
+
+    def test_multiple_entries_with_the_same_site
+      @database.add('Facebook', 'dudeguy', 'secret')
+      @database.add('Facebook', 'foobar', 'secret')
+
+      expected_1 = {:username => 'dudeguy', :password => 'secret'}
+      assert_equal expected_1, @database.get('Facebook', 'dudeguy')
+      expected_2 = {:username => 'foobar', :password => 'secret'}
+      assert_equal expected_2, @database.get('Facebook', 'foobar')
+      assert_equal [expected_1, expected_2], @database.get('Facebook')
+      assert_equal ['Twitter', 'Facebook'], @database.sites
+    end
+
+    def test_get_missing_entry_by_site_and_username
+      @database.add('Facebook', 'dudeguy', 'secret')
+      assert_nil @database.get('Facebook', 'foobar')
+    end
+
+    def test_deleting_one_of_two_entries_with_the_same_site
+      @database.add('Facebook', 'dudeguy', 'secret')
+      @database.add('Facebook', 'foobar', 'secret')
+      @database.delete('Facebook', 'dudeguy')
+      assert_nil @database.get('Facebook', 'dudeguy')
+      assert_equal({:username => 'foobar', :password => 'secret'}, @database.get('Facebook', 'foobar'))
     end
   end
 end

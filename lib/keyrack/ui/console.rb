@@ -34,10 +34,13 @@ module Keyrack
         end
 
         sites.each do |site|
-          entry = @database.get(site, options)
-          choices[index.to_s] = entry
-          @highline.say(" %#{width}d. %s [%s]" % [index, site, entry[:username]])
-          index += 1
+          site_entry = @database.get(site, options)
+          site_entry = [site_entry] unless site_entry.is_a?(Array)
+          site_entry.each do |entry|
+            choices[index.to_s] = entry
+            @highline.say(" %#{width}d. %s [%s]" % [index, site, entry[:username]])
+            index += 1
+          end
         end
 
         @highline.say("Mode: #{mode}")
@@ -142,7 +145,7 @@ module Keyrack
       def store_setup
         result = {}
         result['type'] = @highline.choose do |menu|
-          menu.header = "Choose storage type:"
+          menu.header = "Choose storage type"
           menu.choices("filesystem", "ssh")
         end
 
@@ -163,10 +166,13 @@ module Keyrack
         index = 1
         @highline.say("Choose entry to delete:")
         @database.sites(options).each do |site|
-          entry = @database.get(site, options)
-          choices[index.to_s] = {:site => site, :username => entry[:username]}
-          @highline.say("% 2d. %s [%s]" % [index, site, entry[:username]])
-          index += 1
+          site_entry = @database.get(site, options)
+          site_entry = [site_entry] unless site_entry.is_a?(Array)
+          site_entry.each do |entry|
+            choices[index.to_s] = {:site => site, :username => entry[:username]}
+            @highline.say("% 2d. %s [%s]" % [index, site, entry[:username]])
+            index += 1
+          end
         end
         @highline.say(" c. Cancel")
 
@@ -175,7 +181,7 @@ module Keyrack
         if result != :cancel
           entry = @highline.color("#{result[:site]} [#{result[:username]}]", :red)
           if @highline.agree("You're about to delete #{entry}.  Are you sure? [yn] ")
-            @database.delete(result[:site], options)
+            @database.delete(result[:site], result[:username], options)
           end
         end
       end

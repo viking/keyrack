@@ -80,7 +80,13 @@ module Keyrack
               @highline.say("The password has been copied to your clipboard.")
             elsif mode == :print
               password = @highline.color(result[:password], :cyan)
-              @highline.ask("Here you go: #{password}. Done? ") { |q| q.character = true; q.overwrite = true; q.echo = false }
+              @highline.ask("Here you go: #{password}. Done? ") do |question|
+                question.echo = false
+                if HighLine::SystemExtensions::CHARACTER_MODE != 'stty'
+                  question.character = true
+                  question.overwrite = true
+                end
+              end
             end
             nil
           end
@@ -112,7 +118,7 @@ module Keyrack
               result[:password] = password
               break
             end
-            @highline.say("Passwords didn't match.  Try again!")
+            @highline.say("Passwords didn't match. Try again!")
           end
         end
         result

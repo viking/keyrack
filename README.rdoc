@@ -26,12 +26,19 @@ Running keyrack will display a simple menu in your terminal, like this:
   === Keyrack Main Menu ===
   1. Twitter [foobar]
   2. Facebook [foobar@example.com]
-  Commands: [n]ew [d]elete [g]roup [s]ave [q]uit
+  Mode: copy
+  Commands: [n]ew [d]elete [g]roup [s]ave [m]ode [q]uit
 
 Selecting <b>1</b> in this case will copy the Twitter password for the foobar user
 to your clipboard.
 
 You can create groups (using the 'group' command) to organize your sites.
+
+There are two modes, <b>copy</b> (default) and <b>print</b>. In print mode,
+keyrack will print out your password instead of copying it to your clipboard.
+After printing, it will try to erase it after you hit a key (if you're on
+win32 or have either {termios}[https://github.com/arika/ruby-termios]
+or {ffi-ncurses}[http://rubygems.org/gems/ffi-ncurses] installed).
 
 == Contributing to keyrack
 

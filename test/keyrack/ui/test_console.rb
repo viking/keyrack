@@ -43,9 +43,11 @@ module Keyrack
         @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 d g}) }).returns('1')
         @highline.expects(:color).with('password', :cyan).returns('cyan[password]').in_sequence(seq)
         question = mock do
-          expects(:character=).with(true)
           expects(:echo=).with(false)
-          expects(:overwrite=).with(true)
+          if HighLine::SystemExtensions::CHARACTER_MODE != 'stty'
+            expects(:character=).with(true)
+            expects(:overwrite=).with(true)
+          end
         end
         @highline.expects(:ask).
           with('Here you go: cyan[password]. Done? ').

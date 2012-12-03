@@ -79,7 +79,7 @@ module Keyrack
             result
           else
             if mode == :copy
-              Copier(result[:password])
+              Clipboard.copy(result[:password])
               @highline.say("The password has been copied to your clipboard.")
             elsif mode == :print
               password = @highline.color(result[:password], :cyan)

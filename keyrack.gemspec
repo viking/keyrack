@@ -19,7 +19,7 @@ Gem::Specification.new do |gem|
 
   gem.add_runtime_dependency 'net-scp'
   gem.add_runtime_dependency 'highline'
-  gem.add_runtime_dependency 'copier'
+  gem.add_runtime_dependency 'clipboard'
 
   gem.add_development_dependency 'bundler'
   gem.add_development_dependency 'mocha'

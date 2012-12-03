@@ -1,15 +1,13 @@
 require 'helper'
 
-module Keyrack
-  class TestStore < Test::Unit::TestCase
-    def test_get_filesystem
-      assert_equal Store::Filesystem, Store[:filesystem]
-      assert_equal Store::Filesystem, Store['filesystem']
-    end
+class TestStore < Test::Unit::TestCase
+  def test_get_filesystem
+    assert_equal Keyrack::Store::Filesystem, Keyrack::Store[:filesystem]
+    assert_equal Keyrack::Store::Filesystem, Keyrack::Store['filesystem']
+  end
 
-    def test_get_ssh
-      assert_equal Store::SSH, Store[:ssh]
-      assert_equal Store::SSH, Store['ssh']
-    end
+  def test_get_ssh
+    assert_equal Keyrack::Store::SSH, Keyrack::Store[:ssh]
+    assert_equal Keyrack::Store::SSH, Keyrack::Store['ssh']
   end
 end

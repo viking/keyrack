@@ -23,6 +23,10 @@ module Keyrack
         end
         update(arg)
       end
+
+      @after_add = []
+      @after_change = []
+      @after_remove = []
     end
 
     def name
@@ -42,6 +46,9 @@ module Keyrack
         raise SiteError, "username already exists"
       end
       logins[username] = password
+      @after_add.each do |block|
+        block.call(username, password)
+      end
     end
 
     def password_for(username)
@@ -51,18 +58,37 @@ module Keyrack
       logins[username]
     end
 
-    def change_password(username, password)
+    def change_password(username, new_password)
       if !logins.has_key?(username)
         raise SiteError, "username doesn't exist"
       end
-      logins[username] = password
+      old_password = logins[username]
+      logins[username] = new_password
+      @after_change.each do |block|
+        block.call(username, old_password, new_password)
+      end
     end
 
     def remove_login(username)
       if !logins.has_key?(username)
         raise SiteError, "username doesn't exist"
       end
-      logins.delete(username)
+      password = logins.delete(username)
+      @after_remove.each do |block|
+        block.call(username, password)
+      end
+    end
+
+    def after_add(&block)
+      @after_add << block
+    end
+
+    def after_change(&block)
+      @after_change << block
+    end
+
+    def after_remove(&block)
+      @after_remove << block
     end
   end
 end

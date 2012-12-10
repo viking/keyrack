@@ -128,4 +128,46 @@ class TestSite < Test::Unit::TestCase
       site = new_site(hash)
     end
   end
+
+  test "after_add callback" do
+    site = new_site("Enterprise")
+
+    called = false
+    site.after_add do |username, password|
+      called = true
+      assert_equal "picard", username
+      assert_equal "livingston", password
+    end
+    site.add_login("picard", "livingston")
+    assert called
+  end
+
+  test "after_change callback" do
+    site = new_site("Enterprise")
+    site.add_login("picard", "livingston")
+
+    called = false
+    site.after_change do |username, old_password, new_password|
+      called = true
+      assert_equal "picard", username
+      assert_equal "livingston", old_password
+      assert_equal "crusher", new_password
+    end
+    site.change_password("picard", "crusher")
+    assert called
+  end
+
+  test "after_remove callback" do
+    site = new_site("Enterprise")
+    site.add_login("picard", "livingston")
+
+    called = false
+    site.after_remove do |username, password|
+      called = true
+      assert_equal "picard", username
+      assert_equal "livingston", password
+    end
+    site.remove_login("picard")
+    assert called
+  end
 end

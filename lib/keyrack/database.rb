@@ -1,6 +1,7 @@
 module Keyrack
   class Database
     DEFAULT_OPTIONS = { :maxmem => 0, :maxmemfrac => 0.125, :maxtime => 5.0 }
+    VERSION = 3
 
     def initialize(key, store, options = {})
       @options = DEFAULT_OPTIONS.merge(options)
@@ -10,7 +11,7 @@ module Keyrack
     end
 
     def add(site, username, password, options = {})
-      hash = options[:group] ? @data[options[:group]] ||= {} : @data
+      hash = options[:group] ? @data[:data][options[:group]] ||= {} : @data[:data]
       if hash.has_key?(site)
         site_entry = hash[site]
         if site_entry.is_a?(Array)
@@ -40,7 +41,7 @@ module Keyrack
       options = args.last.is_a?(Hash) ? args.pop : {}
       site, username = args
 
-      site_entry = (options[:group] ? @data[options[:group]] : @data)[site]
+      site_entry = (options[:group] ? @data[:data][options[:group]] : @data[:data])[site]
       if username
         if site_entry.is_a?(Array)
           site_entry.find { |e| e[:username] == username }
@@ -55,7 +56,7 @@ module Keyrack
     end
 
     def sites(options = {})
-      hash = options[:group] ? @data[options[:group]] : @data
+      hash = options[:group] ? @data[:data][options[:group]] : @data[:data]
       if hash
         hash.keys.select do |key|
           val = hash[key]
@@ -68,8 +69,8 @@ module Keyrack
     end
 
     def groups
-      @data.keys.reject do |key|
-        val = @data[key]
+      @data[:data].keys.reject do |key|
+        val = @data[:data][key]
         val.is_a?(Array) || (val.is_a?(Hash) && val.has_key?(:username))
       end.sort
     end
@@ -85,7 +86,7 @@ module Keyrack
     end
 
     def delete(site, username, options = {})
-      hash = options[:group] ? @data[options[:group]] : @data
+      hash = options[:group] ? @data[:data][options[:group]] : @data[:data]
       site_entry = hash[site]
 
       if site_entry.is_a?(Array)
@@ -119,7 +120,7 @@ module Keyrack
             :maxmem, :maxmemfrac, :maxtime))
           Marshal.load(marshalled_data)
         else
-          {}
+          {:data => {}, :version => VERSION}
         end
       end
   end

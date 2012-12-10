@@ -8,7 +8,7 @@ class TestDatabase < Test::Unit::TestCase
     @options = { :maxmem => 0, :maxmemfrac => 0.05, :maxtime => 0.1 }
     @key = "secret"
     @database = Keyrack::Database.new(@key, @store, @options)
-    @database.add('Twitter', 'username', 'password')
+    @database.add('Twitter', 'dude', 'p4ssword')
     @database.save(@key)
   end
 
@@ -20,13 +20,19 @@ class TestDatabase < Test::Unit::TestCase
     encrypted_data = File.read(@path)
     marshalled_data = decrypt(encrypted_data)
     data = Marshal.load(marshalled_data)
-    assert_equal({'Twitter'=>{:username=>'username',:password=>'password'}}, data)
+    expected = {
+      :data => {
+        'Twitter' => {:username => 'dude', :password => 'p4ssword'}
+      },
+      :version => Keyrack::Database::VERSION
+    }
+    assert_equal(expected, data)
   end
 
   def test_reading_existing_database
     database = Keyrack::Database.new(@key, @store)
-    expected = {:username => 'username', :password => 'password'}
-    assert_equal(expected, database.get('Twitter', 'username'))
+    expected = {:username => 'dude', :password => 'p4ssword'}
+    assert_equal(expected, database.get('Twitter', 'dude'))
   end
 
   def test_sites
@@ -65,7 +71,7 @@ class TestDatabase < Test::Unit::TestCase
   end
 
   def test_delete
-    @database.delete('Twitter', 'username')
+    @database.delete('Twitter', 'dude')
     assert_equal [], @database.sites
     assert @database.dirty?
   end

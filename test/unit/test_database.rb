@@ -5,7 +5,7 @@ class TestDatabase < Test::Unit::TestCase
     @path = get_tmpname
     @store = Keyrack::Store['filesystem'].new('path' => @path)
 
-    @options = { :maxmem => 0, :maxmemfrac => 0.05, :maxtime => 0.1 }
+    @options = { :maxmem => 0, :maxmemfrac => 0.05, :maxtime => 0.2 }
     @key = "secret"
     @database = Keyrack::Database.new(@key, @store, @options)
     @database.add('Twitter', 'dude', 'p4ssword')
@@ -18,7 +18,7 @@ class TestDatabase < Test::Unit::TestCase
 
   def test_encrypts_database
     encrypted_data = File.read(@path)
-    marshalled_data = decrypt(encrypted_data)
+    marshalled_data = decrypt(encrypted_data, @key, @options.merge(:maxtime => 1.0))
     data = Marshal.load(marshalled_data)
     expected = {
       :data => {

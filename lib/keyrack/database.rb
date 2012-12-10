@@ -6,12 +6,16 @@ module Keyrack
     def initialize(key, store, options = {})
       @options = DEFAULT_OPTIONS.merge(options)
       @store = store
-      @data = decrypt(key)
+      @database = decrypt(key)
       @dirty = false
     end
 
+    def version
+      @database[:version]
+    end
+
     def add(site, username, password, options = {})
-      hash = options[:group] ? @data[:data][options[:group]] ||= {} : @data[:data]
+      hash = options[:group] ? data[options[:group]] ||= {} : data
       if hash.has_key?(site)
         site_entry = hash[site]
         if site_entry.is_a?(Array)
@@ -41,7 +45,7 @@ module Keyrack
       options = args.last.is_a?(Hash) ? args.pop : {}
       site, username = args
 
-      site_entry = (options[:group] ? @data[:data][options[:group]] : @data[:data])[site]
+      site_entry = (options[:group] ? data[options[:group]] : data)[site]
       if username
         if site_entry.is_a?(Array)
           site_entry.find { |e| e[:username] == username }
@@ -56,7 +60,7 @@ module Keyrack
     end
 
     def sites(options = {})
-      hash = options[:group] ? @data[:data][options[:group]] : @data[:data]
+      hash = options[:group] ? data[options[:group]] : data
       if hash
         hash.keys.select do |key|
           val = hash[key]
@@ -69,8 +73,8 @@ module Keyrack
     end
 
     def groups
-      @data[:data].keys.reject do |key|
-        val = @data[:data][key]
+      data.keys.reject do |key|
+        val = data[key]
         val.is_a?(Array) || (val.is_a?(Hash) && val.has_key?(:username))
       end.sort
     end
@@ -80,13 +84,13 @@ module Keyrack
     end
 
     def save(key)
-      @store.write(Scrypty.encrypt(Marshal.dump(@data), key,
+      @store.write(Scrypty.encrypt(Marshal.dump(@database), key,
         *@options.values_at(:maxmem, :maxmemfrac, :maxtime)))
       @dirty = false
     end
 
     def delete(site, username, options = {})
-      hash = options[:group] ? @data[:data][options[:group]] : @data[:data]
+      hash = options[:group] ? data[options[:group]] : data
       site_entry = hash[site]
 
       if site_entry.is_a?(Array)
@@ -113,15 +117,20 @@ module Keyrack
     end
 
     private
-      def decrypt(key)
-        data = @store.read
-        if data
-          marshalled_data = Scrypty.decrypt(data, key, *@options.values_at(
-            :maxmem, :maxmemfrac, :maxtime))
-          Marshal.load(marshalled_data)
-        else
-          {:data => {}, :version => VERSION}
-        end
+
+    def decrypt(key)
+      data = @store.read
+      if data
+        marshalled_data = Scrypty.decrypt(data, key,
+          *@options.values_at(:maxmem, :maxmemfrac, :maxtime))
+        Marshal.load(marshalled_data)
+      else
+        {:data => {}, :version => VERSION}
       end
+    end
+
+    def data
+      @database[:data]
+    end
   end
 end

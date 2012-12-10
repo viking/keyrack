@@ -30,7 +30,7 @@ class TestConsole < Test::Unit::TestCase
 
     question = mock('question')
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 d g}) }).returns('1')
-    @console.expects(:Copier).with('password')
+    Clipboard.expects(:copy).with('password')
     @highline.expects(:say).with("The password has been copied to your clipboard.")
     assert_nil @console.menu
   end
@@ -147,7 +147,7 @@ class TestConsole < Test::Unit::TestCase
     @highline.expects(:say).with("Commands: [n]ew [d]elete [t]op [m]ode [q]uit")
 
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 d t}) }).returns('1')
-    @console.expects(:Copier).with('password')
+    Clipboard.expects(:copy).with('password')
     @highline.expects(:say).with("The password has been copied to your clipboard.")
     assert_nil @console.menu(:group => 'Foo')
   end

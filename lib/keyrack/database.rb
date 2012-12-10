@@ -1,10 +1,11 @@
 module Keyrack
   class Database
-    def initialize(key, iv, store)
-      @key = key
-      @iv = iv
+    DEFAULT_OPTIONS = { :maxmem => 0, :maxmemfrac => 0.125, :maxtime => 5.0 }
+
+    def initialize(key, store, options = {})
+      @options = DEFAULT_OPTIONS.merge(options)
       @store = store
-      @data = decrypt
+      @data = decrypt(key)
       @dirty = false
     end
 
@@ -77,10 +78,9 @@ module Keyrack
       @dirty
     end
 
-    def save
-      cipher = OpenSSL::Cipher::Cipher.new("AES-128-CBC")
-      cipher.encrypt; cipher.key = @key; cipher.iv = @iv
-      @store.write(cipher.update(Marshal.dump(@data)) + cipher.final)
+    def save(key)
+      @store.write(Scrypty.encrypt(Marshal.dump(@data), key,
+        *@options.values_at(:maxmem, :maxmemfrac, :maxtime)))
       @dirty = false
     end
 
@@ -112,12 +112,12 @@ module Keyrack
     end
 
     private
-      def decrypt
+      def decrypt(key)
         data = @store.read
         if data
-          cipher = OpenSSL::Cipher::Cipher.new("AES-128-CBC")
-          cipher.decrypt; cipher.key = @key; cipher.iv = @iv
-          Marshal.load(cipher.update(data) + cipher.final)
+          marshalled_data = Scrypty.decrypt(data, key, *@options.values_at(
+            :maxmem, :maxmemfrac, :maxtime))
+          Marshal.load(marshalled_data)
         else
           {}
         end

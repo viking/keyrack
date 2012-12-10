@@ -5,6 +5,7 @@ require 'securerandom'
 require 'net/scp'
 require 'highline'
 require 'clipboard'
+require 'scrypty'
 
 module Keyrack
 end

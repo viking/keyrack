@@ -2,28 +2,29 @@ require 'helper'
 
 class TestDatabase < Test::Unit::TestCase
   def setup
-    @key = "abcdefgh" * 32
-    @iv = @key.reverse
-
     @path = get_tmpname
     @store = Keyrack::Store['filesystem'].new('path' => @path)
 
-    @database = Keyrack::Database.new(@key, @iv, @store)
+    @options = { :maxmem => 0, :maxmemfrac => 0.05, :maxtime => 0.1 }
+    @key = "secret"
+    @database = Keyrack::Database.new(@key, @store, @options)
     @database.add('Twitter', 'username', 'password')
-    @database.save
+    @database.save(@key)
+  end
+
+  def decrypt(data, key = @key, options = @options)
+    Scrypty.decrypt(data, key, *options.values_at(:maxmem, :maxmemfrac, :maxtime))
   end
 
   def test_encrypts_database
     encrypted_data = File.read(@path)
-    cipher = OpenSSL::Cipher::Cipher.new("AES-128-CBC")
-    cipher.decrypt; cipher.key = @key; cipher.iv = @iv
-    marshalled_data = cipher.update(encrypted_data) + cipher.final
+    marshalled_data = decrypt(encrypted_data)
     data = Marshal.load(marshalled_data)
     assert_equal({'Twitter'=>{:username=>'username',:password=>'password'}}, data)
   end
 
   def test_reading_existing_database
-    database = Keyrack::Database.new(@key, @iv, @store)
+    database = Keyrack::Database.new(@key, @store)
     expected = {:username => 'username', :password => 'password'}
     assert_equal(expected, database.get('Twitter', 'username'))
   end
@@ -53,7 +54,7 @@ class TestDatabase < Test::Unit::TestCase
       @database.add(site, user, pass)
       site.next!; user.next!; pass.next!
     end
-    @database.save
+    @database.save(@key)
     assert_equal 501, @database.sites.length
   end
 

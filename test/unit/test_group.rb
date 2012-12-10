@@ -330,4 +330,58 @@ class TestGroup < Test::Unit::TestCase
     group.add_group(subgroup)
     assert_equal ["Klingon"], group.group_names
   end
+
+  test "after_site_added callback" do
+    group = new_group("Starships")
+    site = new_site("Enterprise")
+
+    called = false
+    group.after_site_added do |added_site|
+      called = true
+      assert_same site, added_site
+    end
+    group.add_site(site)
+    assert called
+  end
+
+  test "after_site_removed callback" do
+    group = new_group("Starships")
+    site = new_site("Enterprise")
+    group.add_site(site)
+
+    called = false
+    group.after_site_removed do |removed_site|
+      called = true
+      assert_same site, removed_site
+    end
+    group.remove_site("Enterprise")
+    assert called
+  end
+
+  test "after_group_added callback" do
+    group = new_group("Starships")
+    subgroup = new_group("Klingon")
+
+    called = false
+    group.after_group_added do |added_group|
+      called = true
+      assert_same subgroup, added_group
+    end
+    group.add_group(subgroup)
+    assert called
+  end
+
+  test "after_group_removed callback" do
+    group = new_group("Starships")
+    subgroup = new_group("Klingon")
+    group.add_group(subgroup)
+
+    called = false
+    group.after_group_removed do |removed_group|
+      called = true
+      assert_same subgroup, removed_group
+    end
+    group.remove_group("Klingon")
+    assert called
+  end
 end

@@ -69,6 +69,11 @@ module Keyrack
           end
         end
       end
+
+      @after_site_added = []
+      @after_site_removed = []
+      @after_group_added = []
+      @after_group_removed = []
     end
 
     def name
@@ -91,6 +96,10 @@ module Keyrack
         raise GroupError, "site already exists"
       end
       sites[site.name] = site
+
+      @after_site_added.each do |block|
+        block.call(site)
+      end
     end
 
     def site(site_name)
@@ -105,7 +114,11 @@ module Keyrack
       if !sites.has_key?(site_name)
         raise GroupError, "site doesn't exist"
       end
-      sites.delete(site_name)
+      site = sites.delete(site_name)
+
+      @after_site_removed.each do |block|
+        block.call(site)
+      end
     end
 
     def add_group(group)
@@ -116,6 +129,10 @@ module Keyrack
         raise GroupError, "group already exists"
       end
       groups[group.name] = group
+
+      @after_group_added.each do |block|
+        block.call(group)
+      end
     end
 
     def group(group_name)
@@ -130,7 +147,27 @@ module Keyrack
       if !groups.has_key?(group_name)
         raise GroupError, "group doesn't exist"
       end
-      groups.delete(group_name)
+      group = groups.delete(group_name)
+
+      @after_group_removed.each do |block|
+        block.call(group)
+      end
+    end
+
+    def after_site_added(&block)
+      @after_site_added << block
+    end
+
+    def after_site_removed(&block)
+      @after_site_removed << block
+    end
+
+    def after_group_added(&block)
+      @after_group_added << block
+    end
+
+    def after_group_removed(&block)
+      @after_group_removed << block
     end
   end
 end

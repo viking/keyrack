@@ -2,26 +2,32 @@ require 'helper'
 
 class TestConsole < Test::Unit::TestCase
   def setup
-    @database = stub('database', :sites => %w{Twitter Google}, :groups => [], :dirty? => false) do
-      stubs(:get).with('Twitter', {}).returns({
-        :username => 'username', :password => 'password'
-      })
-      stubs(:get).with('Google', {}).returns([
-        { :username => 'username_1', :password => 'password' },
-        { :username => 'username_2', :password => 'password' }
-      ])
+    @twitter = twitter = stub('Twitter') do
+      stubs(:usernames).returns(%w{username})
+      stubs(:password_for).with('username').returns('password')
     end
+    @google = google = stub('Google') do
+      stubs(:usernames).returns(%w{username_1 username_2})
+      stubs(:password_for).with('username_1').returns('password_1')
+      stubs(:password_for).with('username_2').returns('password_2')
+    end
+    @top_group = stub('top group', :site_names => %w{Twitter Google}, :group_names => []) do
+      stubs(:site).with('Twitter').returns(twitter)
+      stubs(:site).with('Google').returns(google)
+    end
+    @database = stub('database', :top_group => @top_group, :dirty? => false)
     @highline = stub('highline')
-    @highline.stubs(:color).with("Keyrack Main Menu", :yellow).returns("yellowKeyrack Main Menu")
+    @highline.stubs(:color).with("Keyrack Main Menu", instance_of(Symbol)).
+      returns("Keyrack Main Menu")
     @highline.stubs(:say)
     HighLine.expects(:new).returns(@highline)
     @console = Keyrack::UI::Console.new
   end
 
-  def test_select_entry_from_menu
+  test "select login from menu" do
     seq = sequence('say')
     @console.database = @database
-    @highline.expects(:say).with("=== yellowKeyrack Main Menu ===")
+    @highline.expects(:say).with("=== Keyrack Main Menu ===")
     @highline.expects(:say).with(" 1. Twitter [username]")
     @highline.expects(:say).with(" 2. Google [username_1]")
     @highline.expects(:say).with(" 3. Google [username_2]")
@@ -35,11 +41,11 @@ class TestConsole < Test::Unit::TestCase
     assert_nil @console.menu
   end
 
-  def test_select_entry_from_menu_in_print_mode
+  test "select entry from menu in print mode" do
     seq = sequence('say')
     @console.database = @database
     @console.mode = :print
-    @highline.expects(:say).with("=== yellowKeyrack Main Menu ===")
+    @highline.expects(:say).with("=== Keyrack Main Menu ===")
     @highline.expects(:say).with(" 1. Twitter [username]")
     @highline.expects(:say).with(" 2. Google [username_1]")
     @highline.expects(:say).with(" 3. Google [username_2]")
@@ -63,10 +69,10 @@ class TestConsole < Test::Unit::TestCase
     assert_nil @console.menu
   end
 
-  def test_select_new_from_menu
+  test "select new from menu" do
     @console.database = @database
 
-    # === yellowKeyrack Main Menu ===
+    # === Keyrack Main Menu ===
     #  1. Twitter [username]
     #  n. New entry
     #  d. Delete entry
@@ -77,10 +83,10 @@ class TestConsole < Test::Unit::TestCase
     assert_equal :new, @console.menu
   end
 
-  def test_select_delete_from_menu
+  test "select delete from menu" do
     @console.database = @database
 
-    # === yellowKeyrack Main Menu ===
+    # === Keyrack Main Menu ===
     #  1. Twitter [username]
     #  n. New entry
     #  d. Delete entry
@@ -93,10 +99,10 @@ class TestConsole < Test::Unit::TestCase
     assert_equal :delete, @console.menu
   end
 
-  def test_select_quit_from_menu
+  test "select quit from menu" do
     @console.database = @database
 
-    # === yellowKeyrack Main Menu ===
+    # === Keyrack Main Menu ===
     #  1. Twitter [username]
     #  n. New entry
     #  d. Delete entry
@@ -107,7 +113,7 @@ class TestConsole < Test::Unit::TestCase
     assert_equal :quit, @console.menu
   end
 
-  def test_select_quit_from_menu_when_database_is_dirty
+  test "select quit from menu when database is dirty" do
     @console.database = @database
     @database.stubs(:dirty?).returns(true)
 
@@ -116,7 +122,7 @@ class TestConsole < Test::Unit::TestCase
     assert_equal nil, @console.menu
   end
 
-  def test_select_save_from_menu
+  test "select save from menu" do
     @console.database = @database
     @database.stubs(:dirty?).returns(true)
 
@@ -125,41 +131,49 @@ class TestConsole < Test::Unit::TestCase
     assert_equal :save, @console.menu
   end
 
-  def test_select_group_from_menu
+  test "select group from menu" do
     @console.database = @database
-    @database.stubs(:groups).returns(["Blargh"])
+    @top_group.stubs(:group_names).returns(["Blargh"])
 
-    @highline.expects(:color).with('Blargh', :green).returns('greenBlargh')
-    @highline.expects(:say).with(" 1. greenBlargh")
+    @highline.stubs(:color).with('Blargh', :green).returns('Blargh')
+    @highline.expects(:say).with(" 1. Blargh")
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 4 d g}) }).returns('1')
-    assert_equal({:group => 'Blargh'}, @console.menu)
+    assert_equal({:group => ['Blargh']}, @console.menu)
   end
 
-  def test_select_entry_from_group_menu
+  test "select entry from group menu" do
     @console.database = @database
-    @database.expects(:sites).with(:group => "Foo").returns(["Facebook"])
-    @database.expects(:get).with('Facebook', :group => "Foo").returns({:username => 'username', :password => 'password'})
+    facebook = stub('Facebook site', :usernames => %w{username}) do
+      expects(:password_for).with('username').returns('password')
+    end
+    foo_group =
+      stub('Foo group') do
+        stubs(:name => 'Foo', :site_names => %w{Facebook}, :group_names => [])
+        expects(:site).at_least(1).with('Facebook').returns(facebook)
+      end
+    @top_group.stubs(:group_names).returns(%w{Foo})
+    @top_group.expects(:group).with('Foo').returns(foo_group)
 
-    @highline.expects(:color).with("Foo", :green).returns("greenFoo")
-    @highline.expects(:say).with("===== greenFoo =====")
+    @highline.expects(:color).with("Foo", :green).returns("Foo")
+    @highline.expects(:say).with("===== Foo =====")
     @highline.expects(:say).with(" 1. Facebook [username]")
     @highline.expects(:say).with("Mode: copy")
-    @highline.expects(:say).with("Commands: [n]ew [d]elete [t]op [m]ode [q]uit")
+    @highline.expects(:say).with("Commands: [n]ew [d]elete [g]roup [t]op [m]ode [q]uit")
 
-    @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 d t}) }).returns('1')
+    @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 d g t}) }).returns('1')
     Clipboard.expects(:copy).with('password')
     @highline.expects(:say).with("The password has been copied to your clipboard.")
-    assert_nil @console.menu(:group => 'Foo')
+    assert_nil @console.menu(:group => ['Foo'])
   end
 
-  def test_get_password
+  test "get password" do
     question = mock('question')
     question.expects(:echo=).with(false)
     @highline.expects(:ask).with("Keyrack password: ").yields(question).returns("foobar")
     assert_equal "foobar", @console.get_password
   end
 
-  def test_get_new_entry_with_manual_password
+  test "get new entry with manual password" do
     seq = sequence("new entry")
     @highline.expects(:ask).with("Label: ").returns("Foo").in_sequence(seq)
     @highline.expects(:ask).with("Username: ").returns("bar").in_sequence(seq)
@@ -172,37 +186,37 @@ class TestConsole < Test::Unit::TestCase
     assert_equal({:site => "Foo", :username => "bar", :password => "baz"}, @console.get_new_entry)
   end
 
-  def test_get_new_entry_generated_password
+  test "get new entry with generated password" do
     seq = sequence("new entry")
     @highline.expects(:ask).with("Label: ").returns("Foo").in_sequence(seq)
     @highline.expects(:ask).with("Username: ").returns("bar").in_sequence(seq)
     @highline.expects(:agree).with("Generate password? [yn] ").returns(true).in_sequence(seq)
     Keyrack::Utils.expects(:generate_password).returns('foobar').in_sequence(seq)
-    @highline.expects(:color).with('foobar', :cyan).returns('cyanfoobar').in_sequence(seq)
-    @highline.expects(:agree).with("Generated cyanfoobar.  Sound good? [yn] ").returns(false).in_sequence(seq)
+    @highline.expects(:color).with('foobar', :cyan).returns('foobar').in_sequence(seq)
+    @highline.expects(:agree).with("Generated foobar.  Sound good? [yn] ").returns(false).in_sequence(seq)
     Keyrack::Utils.expects(:generate_password).returns('foobar').in_sequence(seq)
-    @highline.expects(:color).with('foobar', :cyan).returns('cyanfoobar').in_sequence(seq)
-    @highline.expects(:agree).with("Generated cyanfoobar.  Sound good? [yn] ").returns(true).in_sequence(seq)
+    @highline.expects(:color).with('foobar', :cyan).returns('foobar').in_sequence(seq)
+    @highline.expects(:agree).with("Generated foobar.  Sound good? [yn] ").returns(true).in_sequence(seq)
     assert_equal({:site => "Foo", :username => "bar", :password => "foobar"}, @console.get_new_entry)
   end
 
-  def test_display_first_time_notice
+  test "display first time notice" do
     @highline.expects(:say).with("This looks like your first time using Keyrack.  I'll need to ask you a few questions first.")
     @console.display_first_time_notice
   end
 
-  def test_rsa_setup
-    seq = sequence("rsa setup")
+  test "password setup" do
+    seq = sequence("password setup")
     @highline.expects(:ask).with("New passphrase: ").yields(mock{expects(:echo=).with(false)}).returns('huge').in_sequence(seq)
     @highline.expects(:ask).with("Confirm passphrase: ").yields(mock{expects(:echo=).with(false)}).returns('small').in_sequence(seq)
     @highline.expects(:say).with("Passphrases didn't match.").in_sequence(seq)
     @highline.expects(:ask).with("New passphrase: ").yields(mock{expects(:echo=).with(false)}).returns('huge').in_sequence(seq)
     @highline.expects(:ask).with("Confirm passphrase: ").yields(mock{expects(:echo=).with(false)}).returns('huge').in_sequence(seq)
-    expected = {'password' => 'huge', 'path' => 'rsa'}
-    assert_equal expected, @console.rsa_setup
+    expected = {'password' => 'huge'}
+    assert_equal expected, @console.password_setup
   end
 
-  def test_store_setup_for_filesystem
+  test "store setup for filesystem" do
     @highline.expects(:choose).yields(mock {
       expects(:header=).with("Choose storage type")
       expects(:choices).with("filesystem", "ssh")
@@ -212,7 +226,7 @@ class TestConsole < Test::Unit::TestCase
     assert_equal expected, @console.store_setup
   end
 
-  def test_store_setup_for_ssh
+  test "store setup for ssh" do
     seq = sequence("store setup")
     @highline.expects(:choose).yields(mock {
       expects(:header=).with("Choose storage type")
@@ -226,35 +240,37 @@ class TestConsole < Test::Unit::TestCase
     assert_equal expected, @console.store_setup
   end
 
-  def test_get_new_group
+  test "get new group" do
     @highline.expects(:ask).with("Group: ").yields(mock {
       expects(:validate=).with(/^\w[\w\s]*$/)
     }).returns("Foo")
-    assert_equal({:group => "Foo"}, @console.get_new_group)
+    assert_equal({:group => ["Foo"]}, @console.get_new_group)
   end
 
-  def test_delete_entry
-    @console.database = @database
-    @database.stubs(:sites).returns(%w{Twitter Facebook})
-    @database.stubs(:get).with('Facebook', {}).returns({
-      :username => 'username', :password => 'password'
-    })
+  test "get new subgroup" do
+    @highline.expects(:ask).with("Group: ").yields(mock {
+      expects(:validate=).with(/^\w[\w\s]*$/)
+    }).returns("Foo")
+    assert_equal({:group => ['Bar', 'Foo']}, @console.get_new_group(:group => ['Bar']))
+  end
 
+  test "delete entry" do
+    @console.database = @database
     seq = sequence("deleting")
     @highline.expects(:say).with("Choose entry to delete:").in_sequence(seq)
     @highline.expects(:say).with(" 1. Twitter [username]").in_sequence(seq)
-    @highline.expects(:say).with(" 2. Facebook [username]").in_sequence(seq)
+    @highline.expects(:say).with(" 2. Google [username_1]").in_sequence(seq)
+    @highline.expects(:say).with(" 3. Google [username_2]").in_sequence(seq)
     @highline.expects(:say).with(" c. Cancel").in_sequence(seq)
     @highline.expects(:ask).yields(mock {
-      expects(:in=).with(%w{c 1 2})
+      expects(:in=).with(%w{c 1 2 3})
     }).returns('1').in_sequence(seq)
-    @highline.expects(:color).with("Twitter [username]", :red).returns("redTwitter").in_sequence(seq)
-    @highline.expects(:agree).with("You're about to delete redTwitter.  Are you sure? [yn] ").returns(true).in_sequence(seq)
-    @database.expects(:delete).with("Twitter", 'username', {}).in_sequence(seq)
-    @console.delete_entry
+    @highline.expects(:color).with("Twitter [username]", :red).returns("Twitter").in_sequence(seq)
+    @highline.expects(:agree).with("You're about to delete Twitter.  Are you sure? [yn] ").returns(true).in_sequence(seq)
+    assert_equal({:site => 'Twitter', :username => 'username'}, @console.delete_entry)
   end
 
-  def test_delete_one_entry_from_site_with_multiple_entries
+  test "delete one entry from site with multiple entries" do
     @console.database = @database
 
     seq = sequence("deleting")
@@ -266,18 +282,23 @@ class TestConsole < Test::Unit::TestCase
     @highline.expects(:ask).yields(mock {
       expects(:in=).with(%w{c 1 2 3})
     }).returns('3').in_sequence(seq)
-    @highline.expects(:color).with("Google [username_2]", :red).returns("redGoogle").in_sequence(seq)
-    @highline.expects(:agree).with("You're about to delete redGoogle.  Are you sure? [yn] ").returns(true).in_sequence(seq)
-    @database.expects(:delete).with("Google", 'username_2', {}).in_sequence(seq)
-    @console.delete_entry
+    @highline.expects(:color).with("Google [username_2]", :red).returns("Google [username_2]").in_sequence(seq)
+    @highline.expects(:agree).with("You're about to delete Google [username_2].  Are you sure? [yn] ").returns(true).in_sequence(seq)
+    assert_equal({:site => "Google", :username => "username_2"}, @console.delete_entry)
   end
 
-  def test_delete_group_entry
+  test "delete entry in subgroup" do
     @console.database = @database
-    @database.stubs(:sites).returns(%w{Quora Foursquare})
-    @database.stubs(:get).with(kind_of(String), {:group => 'Social'}).returns({
-      :username => 'username', :password => 'password'
-    })
+    @top_group.stubs(:group_names).returns(%w{Social})
+
+    quora = stub('Quora site', :usernames => %w{username})
+    foursquare = stub('Foursquare site', :usernames => %w{username})
+    social_group = stub('Social group') do
+      stubs(:site_names => %w{Quora Foursquare}, :group_names => [])
+      stubs(:site).with('Quora').returns(quora)
+      stubs(:site).with('Foursquare').returns(foursquare)
+    end
+    @top_group.stubs(:group).with('Social').returns(social_group)
 
     seq = sequence("deleting")
     @highline.expects(:say).with("Choose entry to delete:").in_sequence(seq)
@@ -287,13 +308,12 @@ class TestConsole < Test::Unit::TestCase
     @highline.expects(:ask).yields(mock {
       expects(:in=).with(%w{c 1 2})
     }).returns('2').in_sequence(seq)
-    @highline.expects(:color).with("Foursquare [username]", :red).returns("redFoursquare").in_sequence(seq)
-    @highline.expects(:agree).with("You're about to delete redFoursquare.  Are you sure? [yn] ").returns(true).in_sequence(seq)
-    @database.expects(:delete).with("Foursquare", 'username', :group => 'Social').in_sequence(seq)
-    @console.delete_entry(:group => 'Social')
+    @highline.expects(:color).with("Foursquare [username]", :red).returns("Foursquare [username]").in_sequence(seq)
+    @highline.expects(:agree).with("You're about to delete Foursquare [username].  Are you sure? [yn] ").returns(true).in_sequence(seq)
+    assert_equal({:site => "Foursquare", :username => "username"}, @console.delete_entry(:group => ['Social']))
   end
 
-  def test_switch_mode_from_menu
+  test "switching mode from menu" do
     @console.database = @database
     @console.mode = :copy
 

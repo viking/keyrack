@@ -6,6 +6,7 @@ require 'net/scp'
 require 'highline'
 require 'clipboard'
 require 'scrypty'
+require 'fileutils'
 
 module Keyrack
 end

@@ -1,11 +1,15 @@
 module Keyrack
   module UI
     class Console
-      attr_accessor :database, :mode
+      attr_accessor :mode
 
       def initialize
         @highline = HighLine.new
         @mode = :copy
+      end
+
+      def database=(database)
+        @database = database
       end
 
       def get_password
@@ -16,52 +20,62 @@ module Keyrack
         choices = {'n' => :new, 'q' => :quit, 'm' => :mode}
         index = 1
 
-        sites = @database.sites(options)
-        count = sites.length
-        count += @database.groups.length  if !options[:group]
-        width = count / 10
+        if !options.has_key?(:group)
+          options = options.merge(:group => [])
+        end
+        current_group = get_group(options[:group])
 
-        if !options[:group]
-          # Can't have subgroups (yet?).
+        site_names = current_group.site_names
+        subgroup_names = current_group.group_names
+        count = site_names.inject(0) do |sum, name|
+          sum + current_group.site(name).usernames.length
+        end
+        count += subgroup_names.length
+        number_width = count / 10
+
+        if at_top?(current_group)
           @highline.say("=== #{@highline.color("Keyrack Main Menu", :yellow)} ===")
-          @database.groups.each do |group|
-            choices[index.to_s] = {:group => group}
-            @highline.say(" %#{width}d. %s" % [index, @highline.color(group, :green)])
-            index += 1
-          end
         else
-          @highline.say("===== #{@highline.color(options[:group], :green)} =====")
+          @highline.say("===== #{@highline.color(current_group.name, :green)} =====")
         end
 
-        sites.each do |site|
-          site_entry = @database.get(site, options)
-          site_entry = [site_entry] unless site_entry.is_a?(Array)
-          site_entry.each do |entry|
-            choices[index.to_s] = entry
-            @highline.say(" %#{width}d. %s [%s]" % [index, site, entry[:username]])
+        subgroup_names.each do |group_name|
+          choices[index.to_s] = {:group => group_name}
+          @highline.say(" %#{number_width}d. %s" % [index, @highline.color(group_name, :green)])
+          index += 1
+        end
+
+        site_names.each do |site_name|
+          site = current_group.site(site_name)
+          site.usernames.each do |username|
+            choices[index.to_s] = {:site => site_name, :username => username}
+            @highline.say(" %#{number_width}d. %s [%s]" % [index, site_name, username])
             index += 1
           end
         end
 
-        @highline.say("Mode: #{mode}")
+        @highline.say("Mode: #{@mode}")
         commands = "Commands: [n]ew"
-        if !sites.empty?
+        if !site_names.empty?
           choices['d'] = :delete
           commands << " [d]elete"
         end
-        if !options[:group]
-          choices['g'] = :new_group
-          commands << " [g]roup"
-        else
+
+        choices['g'] = :new_group
+        commands << " [g]roup"
+
+        if !at_top?(current_group)
           choices['t'] = :top
           commands << " [t]op"
         end
+
         if @database.dirty?
           choices['s'] = :save
           commands << " [s]ave"
         end
         commands << " [m]ode [q]uit"
         @highline.say(commands)
+
         answer = @highline.ask(" ? ") { |q| q.in = choices.keys }
         result = choices[answer]
         case result
@@ -76,13 +90,16 @@ module Keyrack
           end
         when Hash
           if result.has_key?(:group)
-            result
+            options.merge(:group => options[:group] + [result[:group]])
           else
-            if mode == :copy
-              Clipboard.copy(result[:password])
+            password = current_group.site(result[:site]).
+              password_for(result[:username])
+
+            if @mode == :copy
+              Clipboard.copy(password)
               @highline.say("The password has been copied to your clipboard.")
-            elsif mode == :print
-              password = @highline.color(result[:password], :cyan)
+            elsif @mode == :print
+              password = @highline.color(password, :cyan)
               @highline.ask("Here you go: #{password}. Done? ") do |question|
                 question.echo = false
                 if HighLine::SystemExtensions::CHARACTER_MODE != 'stty'
@@ -96,9 +113,13 @@ module Keyrack
         end
       end
 
-      def get_new_group
+      def at_top?(group)
+        group == @database.top_group
+      end
+
+      def get_new_group(options = {})
         group = @highline.ask("Group: ") { |q| q.validate = /^\w[\w\s]*$/ }
-        {:group => group}
+        {:group => (options[:group] || []) + [group]}
       end
 
       def get_new_entry
@@ -131,7 +152,7 @@ module Keyrack
         @highline.say("This looks like your first time using Keyrack.  I'll need to ask you a few questions first.")
       end
 
-      def rsa_setup
+      def password_setup
         password = confirmation = nil
         loop do
           password = @highline.ask("New passphrase: ") { |q| q.echo = false }
@@ -139,7 +160,7 @@ module Keyrack
           break if password == confirmation
           @highline.say("Passphrases didn't match.")
         end
-        { 'password' => password, 'path' => 'rsa' }
+        { 'password' => password }
       end
 
       def store_setup
@@ -163,14 +184,15 @@ module Keyrack
 
       def delete_entry(options = {})
         choices = {'c' => :cancel}
+        current_group = get_group(options[:group] || [])
         index = 1
+
         @highline.say("Choose entry to delete:")
-        @database.sites(options).each do |site|
-          site_entry = @database.get(site, options)
-          site_entry = [site_entry] unless site_entry.is_a?(Array)
-          site_entry.each do |entry|
-            choices[index.to_s] = {:site => site, :username => entry[:username]}
-            @highline.say("% 2d. %s [%s]" % [index, site, entry[:username]])
+        current_group.site_names.each do |site_name|
+          site = current_group.site(site_name)
+          site.usernames.each do |username|
+            choices[index.to_s] = {:site => site_name, :username => username}
+            @highline.say("% 2d. %s [%s]" % [index, site_name, username])
             index += 1
           end
         end
@@ -181,8 +203,17 @@ module Keyrack
         if result != :cancel
           entry = @highline.color("#{result[:site]} [#{result[:username]}]", :red)
           if @highline.agree("You're about to delete #{entry}.  Are you sure? [yn] ")
-            @database.delete(result[:site], result[:username], options)
+            return result
           end
+        end
+        nil
+      end
+
+      private
+
+      def get_group(group_tree)
+        group_tree.inject(@database.top_group) do |memo, obj|
+          memo.group(obj)
         end
       end
     end

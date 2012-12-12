@@ -59,7 +59,7 @@ class TestGroup < Test::Unit::TestCase
     subgroup = new_group("Klingon")
     group.add_group(subgroup)
 
-    expected = {"Klingon" => {:name => "Klingon", :sites => {}, :groups => {}}}
+    expected = {"Klingon" => {'name' => "Klingon", 'sites' => {}, 'groups' => {}}}
     assert_equal(expected, group.groups)
   end
 
@@ -96,36 +96,36 @@ class TestGroup < Test::Unit::TestCase
 
   test "load group from hash" do
     hash = {
-      :name => "Starships",
-      :sites => {
+      'name' => "Starships",
+      'sites' => {
         "Enterprise" => {
-          :name => "Enterprise",
-          :logins => {"picard" => "livingston"}
+          'name' => "Enterprise",
+          'logins' => {"picard" => "livingston"}
         }
       },
-      :groups => {
+      'groups' => {
         "Klingon" => {
-          :name => "Klingon",
-          :sites => {
+          'name' => "Klingon",
+          'sites' => {
             "Bortas" => {
-              :name => "Bortas",
-              :logins => {"gowron" => "bat'leth"}
+              'name' => "Bortas",
+              'logins' => {"gowron" => "bat'leth"}
             }
           },
-          :groups => {}
+          'groups' => {}
         }
       }
     }
     group = new_group(hash)
     assert_equal "Starships", group.name
-    assert_equal hash[:sites], group.sites
-    assert_equal hash[:groups], group.groups
+    assert_equal hash['sites'], group.sites
+    assert_equal hash['groups'], group.groups
   end
 
   test "loading group from hash with missing name" do
     hash = {
-      :sites => {},
-      :groups => {}
+      'sites' => {},
+      'groups' => {}
     }
     assert_raises(ArgumentError) do
       group = new_group(hash)
@@ -134,9 +134,9 @@ class TestGroup < Test::Unit::TestCase
 
   test "loading group from hash with non-string name" do
     hash = {
-      :name => [123],
-      :sites => {},
-      :groups => {}
+      'name' => [123],
+      'sites' => {},
+      'groups' => {}
     }
     assert_raises(ArgumentError) do
       group = new_group(hash)
@@ -145,8 +145,8 @@ class TestGroup < Test::Unit::TestCase
 
   test "loading group with missing sites" do
     hash = {
-      :name => "Starships",
-      :groups => {}
+      'name' => "Starships",
+      'groups' => {}
     }
     assert_raises(ArgumentError) do
       group = new_group(hash)
@@ -155,9 +155,9 @@ class TestGroup < Test::Unit::TestCase
 
   test "loading group with non-hash sites" do
     hash = {
-      :name => "Starships",
-      :sites => "foo",
-      :groups => {}
+      'name' => "Starships",
+      'sites' => "foo",
+      'groups' => {}
     }
     assert_raises(ArgumentError) do
       group = new_group(hash)
@@ -166,14 +166,14 @@ class TestGroup < Test::Unit::TestCase
 
   test "loading group with non-string site name" do
     hash = {
-      :name => "Starships",
-      :sites => {
+      'name' => "Starships",
+      'sites' => {
         [123] => {
-          :name => "Enterprise",
-          :logins => {"picard" => "livingston"}
+          'name' => "Enterprise",
+          'logins' => {"picard" => "livingston"}
         }
       },
-      :groups => {}
+      'groups' => {}
     }
     assert_raises(ArgumentError) do
       group = new_group(hash)
@@ -182,11 +182,11 @@ class TestGroup < Test::Unit::TestCase
 
   test "loading group with non-hash site value" do
     hash = {
-      :name => "Starships",
-      :sites => {
+      'name' => "Starships",
+      'sites' => {
         "foo" => "foo"
       },
-      :groups => {}
+      'groups' => {}
     }
     assert_raises(ArgumentError) do
       group = new_group(hash)
@@ -195,11 +195,11 @@ class TestGroup < Test::Unit::TestCase
 
   test "loading group with invalid site" do
     hash = {
-      :name => "Starships",
-      :sites => {
+      'name' => "Starships",
+      'sites' => {
         "foo" => {"foo" => "bar"}
       },
-      :groups => {}
+      'groups' => {}
     }
     assert_raises(ArgumentError) do
       group = new_group(hash)
@@ -208,14 +208,14 @@ class TestGroup < Test::Unit::TestCase
 
   test "loading group with mismatched site names" do
     hash = {
-      :name => "Starships",
-      :sites => {
+      'name' => "Starships",
+      'sites' => {
         "Foo" => {
-          :name => "Enterprise",
-          :logins => {"picard" => "livingston"}
+          'name' => "Enterprise",
+          'logins' => {"picard" => "livingston"}
         }
       },
-      :groups => {}
+      'groups' => {}
     }
     assert_raises(ArgumentError) do
       group = new_group(hash)
@@ -224,8 +224,8 @@ class TestGroup < Test::Unit::TestCase
 
   test "loading group with missing groups" do
     hash = {
-      :name => "Starships",
-      :sites => {}
+      'name' => "Starships",
+      'sites' => {}
     }
     assert_raises(ArgumentError) do
       group = new_group(hash)
@@ -234,9 +234,9 @@ class TestGroup < Test::Unit::TestCase
 
   test "loading group with non-hash groups" do
     hash = {
-      :name => "Starships",
-      :sites => {},
-      :groups => "foo"
+      'name' => "Starships",
+      'sites' => {},
+      'groups' => "foo"
     }
     assert_raises(ArgumentError) do
       group = new_group(hash)
@@ -245,13 +245,13 @@ class TestGroup < Test::Unit::TestCase
 
   test "loading group with non-string group name" do
     hash = {
-      :name => "Starships",
-      :sites => {},
-      :groups => {
+      'name' => "Starships",
+      'sites' => {},
+      'groups' => {
         [123] => {
-          :name => "Klingon",
-          :sites => {},
-          :groups => {}
+          'name' => "Klingon",
+          'sites' => {},
+          'groups' => {}
         }
       },
     }
@@ -262,9 +262,9 @@ class TestGroup < Test::Unit::TestCase
 
   test "loading group with non-hash group value" do
     hash = {
-      :name => "Starships",
-      :sites => {},
-      :groups => {
+      'name' => "Starships",
+      'sites' => {},
+      'groups' => {
         "foo" => "bar"
       }
     }
@@ -275,9 +275,9 @@ class TestGroup < Test::Unit::TestCase
 
   test "loading group with invalid sub-group" do
     hash = {
-      :name => "Starships",
-      :sites => {},
-      :groups => {
+      'name' => "Starships",
+      'sites' => {},
+      'groups' => {
         "foo" => {"foo" => "bar"}
       }
     }
@@ -288,13 +288,13 @@ class TestGroup < Test::Unit::TestCase
 
   test "loading group with mismatched group names" do
     hash = {
-      :name => "Starships",
-      :sites => {},
-      :groups => {
+      'name' => "Starships",
+      'sites' => {},
+      'groups' => {
         "Foo" => {
-          :name => "Klingon",
-          :sites => {},
-          :groups => {}
+          'name' => "Klingon",
+          'sites' => {},
+          'groups' => {}
         }
       }
     }
@@ -336,11 +336,84 @@ class TestGroup < Test::Unit::TestCase
     site = new_site("Enterprise")
 
     called = false
-    group.after_site_added do |added_site|
+    group.after_site_added do |affected_group, added_site|
       called = true
+      assert_same group, affected_group
       assert_same site, added_site
     end
     group.add_site(site)
+    assert called
+  end
+
+  test "after_login_added callback" do
+    group = new_group("Starships")
+    site = new_site("Enterprise")
+    group.add_site(site)
+
+    called = false
+    group.after_login_added do |affected_group, changed_site, username, password|
+      called = true
+      assert_same group, affected_group
+      assert_same site, changed_site
+      assert_equal "picard", username
+      assert_equal "livingston", password
+    end
+    site.add_login("picard", "livingston")
+    assert called
+  end
+
+  test "after_username_changed callback" do
+    group = new_group("Starships")
+    site = new_site("Enterprise")
+    group.add_site(site)
+    site.add_login("picard", "livingston")
+
+    called = false
+    group.after_username_changed do |affected_group, changed_site, old_username, new_username|
+      called = true
+      assert_same group, affected_group
+      assert_same site, changed_site
+      assert_equal "picard", old_username
+      assert_equal "jean_luc", new_username
+    end
+    site.change_username("picard", "jean_luc")
+    assert called
+  end
+
+  test "after_password_changed callback" do
+    group = new_group("Starships")
+    site = new_site("Enterprise")
+    group.add_site(site)
+    site.add_login("picard", "livingston")
+
+    called = false
+    group.after_password_changed do |affected_group, changed_site, username, old_password, new_password|
+      called = true
+      assert_same group, affected_group
+      assert_same site, changed_site
+      assert_equal "picard", username
+      assert_equal "livingston", old_password
+      assert_equal "crusher", new_password
+    end
+    site.change_password("picard", "crusher")
+    assert called
+  end
+
+  test "after_login_removed callback" do
+    group = new_group("Starships")
+    site = new_site("Enterprise")
+    group.add_site(site)
+    site.add_login("picard", "livingston")
+
+    called = false
+    group.after_login_removed do |affected_group, removed_site, username, password|
+      called = true
+      assert_same group, affected_group
+      assert_same site, removed_site
+      assert_equal "picard", username
+      assert_equal "livingston", password
+    end
+    site.remove_login("picard")
     assert called
   end
 
@@ -350,8 +423,9 @@ class TestGroup < Test::Unit::TestCase
     group.add_site(site)
 
     called = false
-    group.after_site_removed do |removed_site|
+    group.after_site_removed do |affected_group, removed_site|
       called = true
+      assert_same group, affected_group
       assert_same site, removed_site
     end
     group.remove_site("Enterprise")
@@ -363,8 +437,9 @@ class TestGroup < Test::Unit::TestCase
     subgroup = new_group("Klingon")
 
     called = false
-    group.after_group_added do |added_group|
+    group.after_group_added do |affected_group, added_group|
       called = true
+      assert_same group, affected_group
       assert_same subgroup, added_group
     end
     group.add_group(subgroup)
@@ -377,11 +452,47 @@ class TestGroup < Test::Unit::TestCase
     group.add_group(subgroup)
 
     called = false
-    group.after_group_removed do |removed_group|
+    group.after_group_removed do |affected_group, removed_group|
       called = true
+      assert_same group, affected_group
       assert_same subgroup, removed_group
     end
     group.remove_group("Klingon")
     assert called
+  end
+
+  test "to_yaml" do
+    group = new_group("Starships")
+    site = new_site("Enterprise")
+    site.add_login("picard", "livingston")
+    group.add_site(site)
+    subgroup = new_group("Klingon")
+    subsite = new_site("Bortas")
+    subsite.add_login("gowron", "bat'leth")
+    subgroup.add_site(subsite)
+    group.add_group(subgroup)
+
+    expected = {
+      'name' => "Starships",
+      'sites' => {
+        "Enterprise" => {
+          'name' => "Enterprise",
+          'logins' => {"picard" => "livingston"}
+        }
+      },
+      'groups' => {
+        "Klingon" => {
+          'name' => "Klingon",
+          'sites' => {
+            "Bortas" => {
+              'name' => "Bortas",
+              'logins' => {"gowron" => "bat'leth"}
+            }
+          },
+          'groups' => {}
+        }
+      }
+    }.to_yaml
+    assert_equal expected, group.to_yaml
   end
 end

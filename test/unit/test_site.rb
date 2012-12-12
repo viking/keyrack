@@ -57,6 +57,20 @@ class TestSite < Test::Unit::TestCase
     end
   end
 
+  test "change_username" do
+    site = new_site("Enterprise")
+    site.add_login("picard", "livingston")
+    site.change_username("picard", "jean_luc")
+    assert_equal({"jean_luc" => "livingston"}, site.logins)
+  end
+
+  test "changing username for non-existant login raises error" do
+    site = new_site("Enterprise")
+    assert_raises(Keyrack::SiteError) do
+      site.change_username("picard", "jean_luc")
+    end
+  end
+
   test "remove_login" do
     site = new_site("Enterprise")
     site.add_login("picard", "livingston")
@@ -73,17 +87,17 @@ class TestSite < Test::Unit::TestCase
 
   test "loading site from hash" do
     hash = {
-      :name => "Enterprise",
-      :logins => {"picard" => "livingston"}
+      'name' => "Enterprise",
+      'logins' => {"picard" => "livingston"}
     }
     site = new_site(hash)
     assert_equal "Enterprise", site.name
-    assert_equal hash[:logins], site.logins
+    assert_equal hash['logins'], site.logins
   end
 
   test "loading site from hash with missing name" do
     hash = {
-      :logins => {"picard" => "livingston"}
+      'logins' => {"picard" => "livingston"}
     }
     assert_raises(ArgumentError) do
       site = new_site(hash)
@@ -92,8 +106,8 @@ class TestSite < Test::Unit::TestCase
 
   test "loading site from hash with non-string name" do
     hash = {
-      :name => [123],
-      :logins => {"picard" => "livingston"}
+      'name' => [123],
+      'logins' => {"picard" => "livingston"}
     }
     assert_raises(ArgumentError) do
       site = new_site(hash)
@@ -102,7 +116,7 @@ class TestSite < Test::Unit::TestCase
 
   test "loading site with missing logins" do
     hash = {
-      :name => "Enterprise"
+      'name' => "Enterprise"
     }
     assert_raises(ArgumentError) do
       site = new_site(hash)
@@ -111,8 +125,8 @@ class TestSite < Test::Unit::TestCase
 
   test "loading site with non-hash logins" do
     hash = {
-      :name => "Enterprise",
-      :logins => "foo"
+      'name' => "Enterprise",
+      'logins' => "foo"
     }
     assert_raises(ArgumentError) do
       site = new_site(hash)
@@ -121,20 +135,21 @@ class TestSite < Test::Unit::TestCase
 
   test "loading site with invalid logins hash" do
     hash = {
-      :name => "Enterprise",
-      :logins => {[123] => [456]}
+      'name' => "Enterprise",
+      'logins' => {[123] => [456]}
     }
     assert_raises(ArgumentError) do
       site = new_site(hash)
     end
   end
 
-  test "after_add callback" do
+  test "after_login_added callback" do
     site = new_site("Enterprise")
 
     called = false
-    site.after_add do |username, password|
+    site.after_login_added do |affected_site, username, password|
       called = true
+      assert_same site, affected_site
       assert_equal "picard", username
       assert_equal "livingston", password
     end
@@ -142,13 +157,14 @@ class TestSite < Test::Unit::TestCase
     assert called
   end
 
-  test "after_change callback" do
+  test "after_password_changed callback" do
     site = new_site("Enterprise")
     site.add_login("picard", "livingston")
 
     called = false
-    site.after_change do |username, old_password, new_password|
+    site.after_password_changed do |affected_site, username, old_password, new_password|
       called = true
+      assert_same site, affected_site
       assert_equal "picard", username
       assert_equal "livingston", old_password
       assert_equal "crusher", new_password
@@ -157,17 +173,43 @@ class TestSite < Test::Unit::TestCase
     assert called
   end
 
-  test "after_remove callback" do
+  test "after_username_changed callback" do
     site = new_site("Enterprise")
     site.add_login("picard", "livingston")
 
     called = false
-    site.after_remove do |username, password|
+    site.after_username_changed do |affected_site, old_username, new_username|
       called = true
+      assert_same site, affected_site
+      assert_equal "picard", old_username
+      assert_equal "jean_luc", new_username
+    end
+    site.change_username("picard", "jean_luc")
+    assert called
+  end
+
+  test "after_login_removed callback" do
+    site = new_site("Enterprise")
+    site.add_login("picard", "livingston")
+
+    called = false
+    site.after_login_removed do |affected_site, username, password|
+      called = true
+      assert_same site, affected_site
       assert_equal "picard", username
       assert_equal "livingston", password
     end
     site.remove_login("picard")
     assert called
+  end
+
+  test "serializing to yaml" do
+    site = new_site("Enterprise")
+    site.add_login("picard", "livingston")
+    expected = {
+      'name' => "Enterprise",
+      'logins' => {"picard" => "livingston"}
+    }.to_yaml
+    assert_equal expected, site.to_yaml
   end
 end

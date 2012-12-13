@@ -15,7 +15,6 @@ class TestConsole < Test::Unit::TestCase
       stubs(:site).with('Twitter').returns(twitter)
       stubs(:site).with('Google').returns(google)
     end
-    @database = stub('database', :top_group => @top_group, :dirty? => false)
     @highline = stub('highline')
     @highline.stubs(:color).with("Keyrack Main Menu", instance_of(Symbol)).
       returns("Keyrack Main Menu")
@@ -26,7 +25,6 @@ class TestConsole < Test::Unit::TestCase
 
   test "select login from menu" do
     seq = sequence('say')
-    @console.database = @database
     @highline.expects(:say).with("=== Keyrack Main Menu ===")
     @highline.expects(:say).with(" 1. Twitter [username]")
     @highline.expects(:say).with(" 2. Google [username_1]")
@@ -38,12 +36,11 @@ class TestConsole < Test::Unit::TestCase
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 d g}) }).returns('1')
     Clipboard.expects(:copy).with('password')
     @highline.expects(:say).with("The password has been copied to your clipboard.")
-    assert_nil @console.menu
+    assert_nil @console.menu(:group => @top_group, :at_top => true)
   end
 
   test "select entry from menu in print mode" do
     seq = sequence('say')
-    @console.database = @database
     @console.mode = :print
     @highline.expects(:say).with("=== Keyrack Main Menu ===")
     @highline.expects(:say).with(" 1. Twitter [username]")
@@ -66,12 +63,10 @@ class TestConsole < Test::Unit::TestCase
       yields(question).
       returns('')
 
-    assert_nil @console.menu
+    assert_nil @console.menu(:group => @top_group, :at_top => true)
   end
 
   test "select new from menu" do
-    @console.database = @database
-
     # === Keyrack Main Menu ===
     #  1. Twitter [username]
     #  n. New entry
@@ -80,12 +75,10 @@ class TestConsole < Test::Unit::TestCase
     #  q. Quit
 
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 d g}) }).returns('n')
-    assert_equal :new, @console.menu
+    assert_equal :new, @console.menu(:group => @top_group, :at_top => true)
   end
 
   test "select delete from menu" do
-    @console.database = @database
-
     # === Keyrack Main Menu ===
     #  1. Twitter [username]
     #  n. New entry
@@ -96,12 +89,10 @@ class TestConsole < Test::Unit::TestCase
     question = mock('question')
     question.expects(:in=).with(%w{n q m 1 2 3 d g})
     @highline.expects(:ask).yields(question).returns('d')
-    assert_equal :delete, @console.menu
+    assert_equal :delete, @console.menu(:group => @top_group, :at_top => true)
   end
 
   test "select quit from menu" do
-    @console.database = @database
-
     # === Keyrack Main Menu ===
     #  1. Twitter [username]
     #  n. New entry
@@ -110,39 +101,33 @@ class TestConsole < Test::Unit::TestCase
     #  q. Quit
 
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 d g}) }).returns('q')
-    assert_equal :quit, @console.menu
+    assert_equal :quit, @console.menu(:group => @top_group, :at_top => true)
   end
 
   test "select quit from menu when database is dirty" do
-    @console.database = @database
-    @database.stubs(:dirty?).returns(true)
-
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 d g s}) }).returns('q')
     @highline.expects(:agree).with("Really quit?  You have unsaved changes! [yn] ").returns(false)
-    assert_equal nil, @console.menu
+    assert_equal nil, @console.menu(:group => @top_group, :at_top => true, :dirty => true)
   end
 
   test "select save from menu" do
-    @console.database = @database
-    @database.stubs(:dirty?).returns(true)
-
     @highline.expects(:say).with { |string| string =~ /\[s\]ave/ }
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 d g s}) }).returns('s')
-    assert_equal :save, @console.menu
+    assert_equal :save, @console.menu(:group => @top_group, :at_top => true, :dirty => true)
   end
 
   test "select group from menu" do
-    @console.database = @database
     @top_group.stubs(:group_names).returns(["Blargh"])
+    blargh = stub('Blargh group')
+    @top_group.stubs(:group).with('Blargh').returns(blargh)
 
     @highline.stubs(:color).with('Blargh', :green).returns('Blargh')
     @highline.expects(:say).with(" 1. Blargh")
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 4 d g}) }).returns('1')
-    assert_equal({:group => ['Blargh']}, @console.menu)
+    assert_equal({:group => blargh}, @console.menu(:group => @top_group, :at_top => true))
   end
 
   test "select entry from group menu" do
-    @console.database = @database
     facebook = stub('Facebook site', :usernames => %w{username}) do
       expects(:password_for).with('username').returns('password')
     end
@@ -151,8 +136,6 @@ class TestConsole < Test::Unit::TestCase
         stubs(:name => 'Foo', :site_names => %w{Facebook}, :group_names => [])
         expects(:site).at_least(1).with('Facebook').returns(facebook)
       end
-    @top_group.stubs(:group_names).returns(%w{Foo})
-    @top_group.expects(:group).with('Foo').returns(foo_group)
 
     @highline.expects(:color).with("Foo", :green).returns("Foo")
     @highline.expects(:say).with("===== Foo =====")
@@ -163,7 +146,7 @@ class TestConsole < Test::Unit::TestCase
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 d g t}) }).returns('1')
     Clipboard.expects(:copy).with('password')
     @highline.expects(:say).with("The password has been copied to your clipboard.")
-    assert_nil @console.menu(:group => ['Foo'])
+    assert_nil @console.menu(:group => foo_group, :at_top => false)
   end
 
   test "get password" do
@@ -212,8 +195,7 @@ class TestConsole < Test::Unit::TestCase
     @highline.expects(:say).with("Passphrases didn't match.").in_sequence(seq)
     @highline.expects(:ask).with("New passphrase: ").yields(mock{expects(:echo=).with(false)}).returns('huge').in_sequence(seq)
     @highline.expects(:ask).with("Confirm passphrase: ").yields(mock{expects(:echo=).with(false)}).returns('huge').in_sequence(seq)
-    expected = {'password' => 'huge'}
-    assert_equal expected, @console.password_setup
+    assert_equal 'huge', @console.password_setup
   end
 
   test "store setup for filesystem" do
@@ -244,18 +226,10 @@ class TestConsole < Test::Unit::TestCase
     @highline.expects(:ask).with("Group: ").yields(mock {
       expects(:validate=).with(/^\w[\w\s]*$/)
     }).returns("Foo")
-    assert_equal({:group => ["Foo"]}, @console.get_new_group)
-  end
-
-  test "get new subgroup" do
-    @highline.expects(:ask).with("Group: ").yields(mock {
-      expects(:validate=).with(/^\w[\w\s]*$/)
-    }).returns("Foo")
-    assert_equal({:group => ['Bar', 'Foo']}, @console.get_new_group(:group => ['Bar']))
+    assert_equal('Foo', @console.get_new_group)
   end
 
   test "delete entry" do
-    @console.database = @database
     seq = sequence("deleting")
     @highline.expects(:say).with("Choose entry to delete:").in_sequence(seq)
     @highline.expects(:say).with(" 1. Twitter [username]").in_sequence(seq)
@@ -267,12 +241,10 @@ class TestConsole < Test::Unit::TestCase
     }).returns('1').in_sequence(seq)
     @highline.expects(:color).with("Twitter [username]", :red).returns("Twitter").in_sequence(seq)
     @highline.expects(:agree).with("You're about to delete Twitter.  Are you sure? [yn] ").returns(true).in_sequence(seq)
-    assert_equal({:site => 'Twitter', :username => 'username'}, @console.delete_entry)
+    assert_equal({:site => 'Twitter', :username => 'username'}, @console.delete_entry(@top_group))
   end
 
   test "delete one entry from site with multiple entries" do
-    @console.database = @database
-
     seq = sequence("deleting")
     @highline.expects(:say).with("Choose entry to delete:").in_sequence(seq)
     @highline.expects(:say).with(" 1. Twitter [username]").in_sequence(seq)
@@ -284,11 +256,10 @@ class TestConsole < Test::Unit::TestCase
     }).returns('3').in_sequence(seq)
     @highline.expects(:color).with("Google [username_2]", :red).returns("Google [username_2]").in_sequence(seq)
     @highline.expects(:agree).with("You're about to delete Google [username_2].  Are you sure? [yn] ").returns(true).in_sequence(seq)
-    assert_equal({:site => "Google", :username => "username_2"}, @console.delete_entry)
+    assert_equal({:site => "Google", :username => "username_2"}, @console.delete_entry(@top_group))
   end
 
   test "delete entry in subgroup" do
-    @console.database = @database
     @top_group.stubs(:group_names).returns(%w{Social})
 
     quora = stub('Quora site', :usernames => %w{username})
@@ -310,15 +281,36 @@ class TestConsole < Test::Unit::TestCase
     }).returns('2').in_sequence(seq)
     @highline.expects(:color).with("Foursquare [username]", :red).returns("Foursquare [username]").in_sequence(seq)
     @highline.expects(:agree).with("You're about to delete Foursquare [username].  Are you sure? [yn] ").returns(true).in_sequence(seq)
-    assert_equal({:site => "Foursquare", :username => "username"}, @console.delete_entry(:group => ['Social']))
+    assert_equal({:site => "Foursquare", :username => "username"}, @console.delete_entry(social_group))
   end
 
   test "switching mode from menu" do
-    @console.database = @database
     @console.mode = :copy
 
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 d g}) }).returns('m')
-    assert_nil @console.menu
+    assert_nil @console.menu(:group => @top_group, :at_top => true)
     assert_equal :print, @console.mode
+  end
+
+  test "confirm overwrite entry" do
+    @highline.expects(:color).with("Twitter [username]", :cyan).returns("Twitter [username]")
+    @highline.expects(:agree).with("There's already an entry for: Twitter [username]. Do you want to overwrite it? [yn] ").returns(true)
+    assert_equal true, @console.confirm_overwrite_entry('Twitter', 'username')
+  end
+
+  test "top command" do
+    foo_group = stub('Foo group', :name => 'Foo', :site_names => [], :group_names => [])
+    @highline.stubs(:color).with('Foo', instance_of(Symbol)).returns('Foo')
+    @highline.expects(:say).with("Commands: [n]ew [g]roup [t]op [m]ode [q]uit")
+    @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m g t}) }).returns('t')
+    assert_equal :top, @console.menu(:group => foo_group, :at_top => false)
+  end
+
+  test "up command" do
+    foo_group = stub('Foo group', :name => 'Foo', :site_names => [], :group_names => [])
+    @highline.stubs(:color).with('Foo', instance_of(Symbol)).returns('Foo')
+    @highline.expects(:say).with("Commands: [n]ew [g]roup [u]p [t]op [m]ode [q]uit")
+    @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m g u t}) }).returns('u')
+    assert_equal :up, @console.menu(:group => foo_group, :at_top => false, :enable_up => true)
   end
 end

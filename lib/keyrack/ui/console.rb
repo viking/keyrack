@@ -8,22 +8,17 @@ module Keyrack
         @mode = :copy
       end
 
-      def database=(database)
-        @database = database
-      end
-
       def get_password
         @highline.ask("Keyrack password: ") { |q| q.echo = false }
       end
 
-      def menu(options = {})
+      def menu(options)
+        current_group = options[:group]
+        dirty = options[:dirty]
+        at_top = options[:at_top]
+
         choices = {'n' => :new, 'q' => :quit, 'm' => :mode}
         index = 1
-
-        if !options.has_key?(:group)
-          options = options.merge(:group => [])
-        end
-        current_group = get_group(options[:group])
 
         site_names = current_group.site_names
         subgroup_names = current_group.group_names
@@ -33,7 +28,7 @@ module Keyrack
         count += subgroup_names.length
         number_width = count / 10
 
-        if at_top?(current_group)
+        if at_top
           @highline.say("=== #{@highline.color("Keyrack Main Menu", :yellow)} ===")
         else
           @highline.say("===== #{@highline.color(current_group.name, :green)} =====")
@@ -64,12 +59,17 @@ module Keyrack
         choices['g'] = :new_group
         commands << " [g]roup"
 
-        if !at_top?(current_group)
+        if options[:enable_up]
+          choices['u'] = :up
+          commands << " [u]p"
+        end
+
+        if !at_top
           choices['t'] = :top
           commands << " [t]op"
         end
 
-        if @database.dirty?
+        if dirty
           choices['s'] = :save
           commands << " [s]ave"
         end
@@ -80,7 +80,7 @@ module Keyrack
         result = choices[answer]
         case result
         when Symbol
-          if result == :quit && @database.dirty? && !@highline.agree("Really quit?  You have unsaved changes! [yn] ")
+          if result == :quit && dirty && !@highline.agree("Really quit?  You have unsaved changes! [yn] ")
             nil
           elsif result == :mode
             @mode = @mode == :copy ? :print : :copy
@@ -90,7 +90,7 @@ module Keyrack
           end
         when Hash
           if result.has_key?(:group)
-            options.merge(:group => options[:group] + [result[:group]])
+            {:group => current_group.group(result[:group])}
           else
             password = current_group.site(result[:site]).
               password_for(result[:username])
@@ -113,13 +113,8 @@ module Keyrack
         end
       end
 
-      def at_top?(group)
-        group == @database.top_group
-      end
-
       def get_new_group(options = {})
-        group = @highline.ask("Group: ") { |q| q.validate = /^\w[\w\s]*$/ }
-        {:group => (options[:group] || []) + [group]}
+        @highline.ask("Group: ") { |q| q.validate = /^\w[\w\s]*$/ }
       end
 
       def get_new_entry
@@ -160,7 +155,7 @@ module Keyrack
           break if password == confirmation
           @highline.say("Passphrases didn't match.")
         end
-        { 'password' => password }
+        password
       end
 
       def store_setup
@@ -182,14 +177,13 @@ module Keyrack
         result
       end
 
-      def delete_entry(options = {})
+      def delete_entry(group)
         choices = {'c' => :cancel}
-        current_group = get_group(options[:group] || [])
         index = 1
 
         @highline.say("Choose entry to delete:")
-        current_group.site_names.each do |site_name|
-          site = current_group.site(site_name)
+        group.site_names.each do |site_name|
+          site = group.site(site_name)
           site.usernames.each do |username|
             choices[index.to_s] = {:site => site_name, :username => username}
             @highline.say("% 2d. %s [%s]" % [index, site_name, username])
@@ -209,12 +203,9 @@ module Keyrack
         nil
       end
 
-      private
-
-      def get_group(group_tree)
-        group_tree.inject(@database.top_group) do |memo, obj|
-          memo.group(obj)
-        end
+      def confirm_overwrite_entry(site_name, username)
+        entry_name = @highline.color("#{site_name} [#{username}]", :cyan)
+        @highline.agree("There's already an entry for: #{entry_name}. Do you want to overwrite it? [yn] ")
       end
     end
   end

@@ -150,4 +150,12 @@ class TestDatabase < Test::Unit::TestCase
     @database.save(@key)
     assert_equal 501, @database.top_group.sites.length
   end
+
+  test "saving requires same password as creation" do
+    pend
+  end
+
+  test "change password" do
+    pend
+  end
 end

@@ -6,4 +6,5 @@ gemspec
 group :development do
   gem 'guard-test'
   gem 'rb-inotify'
+  gem 'debugger'
 end

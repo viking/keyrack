@@ -52,7 +52,9 @@ module Keyrack
       if data
         str = Scrypty.decrypt(data, @password,
           *@decrypt_options.values_at(:maxmem, :maxmemfrac, :maxtime))
-        YAML.load(str)
+        hash = YAML.load(str)
+        hash['groups']['top'] = Group.new(hash['groups']['top'])
+        hash
       else
         {'groups' => {'top' => Group.new('top')}, 'version' => VERSION}
       end

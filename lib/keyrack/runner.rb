@@ -87,7 +87,9 @@ module Keyrack
           group_tree << group
         when :save
           password = @ui.get_password
-          @database.save(password)
+          if !@database.save(password)
+            @ui.display_invalid_password_notice
+          end
         when :quit
           break
         when Hash

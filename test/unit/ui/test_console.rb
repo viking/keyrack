@@ -313,4 +313,9 @@ class TestConsole < Test::Unit::TestCase
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m g u t}) }).returns('u')
     assert_equal :up, @console.menu(:group => foo_group, :at_top => false, :enable_up => true)
   end
+
+  test "invalid password" do
+    @highline.expects(:say).with("Invalid password.")
+    @console.display_invalid_password_notice
+  end
 end

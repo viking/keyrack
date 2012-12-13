@@ -213,10 +213,25 @@ class TestRunner < Test::Unit::TestCase
     seq << @database.expects(:dirty?).returns(true)
     seq << @console.expects(:menu).with(@menu_options.merge(:dirty => true)).returns(:save)
     seq << @console.expects(:get_password).returns('secret')
-    seq << @database.expects(:save).with('secret')
+    seq << @database.expects(:save).with('secret').returns(true)
 
     seq << @database.expects(:dirty?).returns(false)
     seq << @console.expects(:menu).with(@menu_options).returns(:quit)
+
+    runner = Keyrack::Runner.new(["-d", @keyrack_dir])
+  end
+
+  test "save with invalid password" do
+    setup_config
+
+    seq = SequenceHelper.new("ui sequence")
+    seq << @database.expects(:dirty?).returns(true)
+    seq << @console.expects(:menu).with(@menu_options.merge(:dirty => true)).returns(:save)
+    seq << @console.expects(:get_password).returns('secret')
+    seq << @database.expects(:save).with('secret').returns(false)
+    seq << @console.expects(:display_invalid_password_notice)
+    seq << @database.expects(:dirty?).returns(true)
+    seq << @console.expects(:menu).with(@menu_options.merge(:dirty => true)).returns(:quit)
 
     runner = Keyrack::Runner.new(["-d", @keyrack_dir])
   end
@@ -303,101 +318,4 @@ class TestRunner < Test::Unit::TestCase
 
     runner = Keyrack::Runner.new(["-d", @keyrack_dir])
   end
-
-=begin
-  def test_console
-    store_path = 'foo/bar/hey/buddy'
-    config = {
-      'store' => { 'type' => 'filesystem', 'path' => store_path }
-    }
-    keyrack_dir = get_tmpname
-    Dir.mkdir(keyrack_dir)
-    File.open(File.join(keyrack_dir, "config"), 'w') { |f| f.print(config.to_yaml) }
-
-    Keyrack::UI::Console.expects(:new).returns(@console)
-
-    seq = sequence('ui sequence')
-    @console.expects(:get_password).returns('secret').in_sequence(seq)
-    store = mock('filesystem store')
-    Keyrack::Store::Filesystem.expects(:new).with('path' => store_path).returns(store).in_sequence(seq)
-    Keyrack::Database.expects(:new).with('secret', store).returns(@database).in_sequence(seq)
-    @console.expects(:database=).with(@database).in_sequence(seq)
-
-    @console.expects(:menu).returns(:new).in_sequence(seq)
-    @console.expects(:get_new_entry).returns({:site => "Foo", :username => "bar", :password => "baz"}).in_sequence(seq)
-
-    new_site = stub('new site')
-    Keyrack::Site.expects(:new).with('Foo').returns(new_site).in_sequence(seq)
-    new_site.expects(:add_login).with('bar', 'baz').in_sequence(seq)
-    @top_group.expects(:add_site).with(new_site).in_sequence(seq)
-
-    @console.expects(:menu).returns(nil).in_sequence(seq)
-    @console.expects(:menu).returns(:save).in_sequence(seq)
-    @console.expects(:get_password).returns('secret').in_sequence(seq)
-    @database.expects(:save).with('secret').in_sequence(seq)
-    @console.expects(:menu).returns(:delete).in_sequence(seq)
-    @console.expects(:delete_entry).with({}).in_sequence(seq)
-
-    @console.expects(:menu).returns(:new_group).in_sequence(seq)
-    @console.expects(:get_new_group).returns(:group => 'Blah').in_sequence(seq)
-    @console.expects(:menu).with(:group => 'Blah').returns(:top).in_sequence(seq)
-    @console.expects(:menu).returns(:group => 'Huge').in_sequence(seq)
-    @console.expects(:menu).with(:group => 'Huge').returns(nil).in_sequence(seq)
-    @console.expects(:menu).with(:group => 'Huge').returns(:new).in_sequence(seq)
-    @console.expects(:get_new_entry).returns({:site => "Bar", :username => "bar", :password => "baz"}).in_sequence(seq)
-    @database.expects(:add).with("Bar", "bar", "baz", :group => 'Huge')
-    @console.expects(:menu).with(:group => "Huge").returns(:delete).in_sequence(seq)
-    @console.expects(:delete_entry).with(:group => 'Huge').in_sequence(seq)
-    @console.expects(:menu).with(:group => 'Huge').returns(:top).in_sequence(seq)
-    @console.expects(:menu).returns(:quit).in_sequence(seq)
-
-    runner = Keyrack::Runner.new(["-d", keyrack_dir])
-  end
-
-  def test_console_first_run
-    keyrack_dir = get_tmpname
-    seq = sequence('ui sequence')
-
-    @console.expects(:display_first_time_notice).in_sequence(seq)
-
-    # RSA generation
-    rsa_path = 'id_rsa'
-    @console.expects(:rsa_setup).returns('password' => 'secret', 'path' => rsa_path).in_sequence(seq)
-    rsa = mock('rsa key')
-    Keyrack::Utils.expects(:generate_rsa_key).with('secret').returns([rsa, 'private key']).in_sequence(seq)
-
-    # AES generation
-    Keyrack::Utils.expects(:generate_aes_key).twice.returns('foobar', 'barfoo').in_sequence(seq)
-    dump = Marshal.dump('key' => 'foobar', 'iv' => 'barfoo')
-    rsa.expects(:public_encrypt).with(dump).returns("encrypted dump")
-
-    # Store setup
-    @console.expects(:store_setup).returns('type' => 'filesystem', 'path' => 'database').in_sequence(seq)
-    store = mock('filesystem store')
-    Keyrack::Store::Filesystem.expects(:new).with('path' => File.join(keyrack_dir, 'database')).returns(store).in_sequence(seq)
-
-    Keyrack::Database.expects(:new).with('foobar', 'barfoo', store).returns(@database).in_sequence(seq)
-    @console.expects(:database=).with(@database).in_sequence(seq)
-    @console.expects(:menu).returns(:quit).in_sequence(seq)
-
-    runner = Keyrack::Runner.new(["-d", keyrack_dir])
-
-    assert Dir.exist?(keyrack_dir)
-    expected_rsa_file = File.expand_path(rsa_path, keyrack_dir)
-    assert File.exist?(expected_rsa_file)
-    assert_equal 'private key', File.read(expected_rsa_file)
-
-    expected_aes_file = File.expand_path('aes', keyrack_dir)
-    assert File.exist?(expected_aes_file)
-    assert_equal 'encrypted dump', File.read(expected_aes_file)
-
-    expected_config_file = File.expand_path('config', keyrack_dir)
-    assert File.exist?(expected_config_file)
-    expected_config = {
-      'rsa' => expected_rsa_file, 'aes' => expected_aes_file,
-      'store' => { 'type' => 'filesystem', 'path' => File.join(keyrack_dir, 'database') }
-    }
-    assert_equal expected_config, YAML.load_file(expected_config_file)
-  end
-=end
 end

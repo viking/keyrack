@@ -207,6 +207,10 @@ module Keyrack
         entry_name = @highline.color("#{site_name} [#{username}]", :cyan)
         @highline.agree("There's already an entry for: #{entry_name}. Do you want to overwrite it? [yn] ")
       end
+
+      def display_invalid_password_notice
+        @highline.say("Invalid password.")
+      end
     end
   end
 end

@@ -12,7 +12,7 @@ class TestDatabase < Test::Unit::TestCase
     twitter = Keyrack::Site.new('Twitter')
     twitter.add_login('dude', 'p4ssword')
     @database.top_group.add_site(twitter)
-    @database.save(@key)
+    assert @database.save(@key)
   end
 
   def decrypt(data, key = @key, options = @decrypt_options)
@@ -92,7 +92,7 @@ class TestDatabase < Test::Unit::TestCase
   test "database is dirty after removing subgroup" do
     group = Keyrack::Group.new('Foo')
     @database.top_group.add_group(group)
-    @database.save(@key)
+    assert @database.save(@key)
 
     assert !@database.dirty?
     @database.top_group.remove_group('Foo')
@@ -103,7 +103,7 @@ class TestDatabase < Test::Unit::TestCase
     assert !@database.dirty?
     group = Keyrack::Group.new('Foo')
     @database.top_group.add_group(group)
-    @database.save(@key)
+    assert @database.save(@key)
 
     assert !@database.dirty?
     site = Keyrack::Site.new('Bar')
@@ -115,12 +115,12 @@ class TestDatabase < Test::Unit::TestCase
     assert !@database.dirty?
     group = Keyrack::Group.new('Foo')
     @database.top_group.add_group(group)
-    @database.save(@key)
+    assert @database.save(@key)
 
     assert !@database.dirty?
     site = Keyrack::Site.new('Bar')
     group.add_site(site)
-    @database.save(@key)
+    assert @database.save(@key)
 
     assert !@database.dirty?
     group.remove_site('Bar')
@@ -131,7 +131,7 @@ class TestDatabase < Test::Unit::TestCase
     assert !@database.dirty?
     group = Keyrack::Group.new('Foo')
     @database.top_group.add_group(group)
-    @database.save(@key)
+    assert @database.save(@key)
 
     assert !@database.dirty?
     subgroup = Keyrack::Group.new('Bar')
@@ -147,15 +147,35 @@ class TestDatabase < Test::Unit::TestCase
       @database.top_group.add_site(site)
       site_name.next!; username.next!; password.next!
     end
-    @database.save(@key)
+    assert @database.save(@key)
     assert_equal 501, @database.top_group.sites.length
   end
 
   test "saving requires same password as creation" do
-    pend
+    site = Keyrack::Site.new("Foo")
+    site.add_login("bar", "baz")
+    @database.top_group.add_site(site)
+
+    assert !@database.save("bogus")
   end
 
-  test "change password" do
-    pend
+  test "changing database password successfully" do
+    assert @database.change_password(@key, "new-secret")
+
+    site = Keyrack::Site.new("Foo")
+    site.add_login("bar", "baz")
+    @database.top_group.add_site(site)
+
+    assert @database.save("new-secret")
+  end
+
+  test "attempting to change database password with wrong existing password" do
+    assert !@database.change_password("bogus", "new-secret")
+
+    site = Keyrack::Site.new("Foo")
+    site.add_login("bar", "baz")
+    @database.top_group.add_site(site)
+
+    assert !@database.save("new-secret")
   end
 end

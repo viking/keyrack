@@ -3,11 +3,12 @@ module Keyrack
     DEFAULT_OPTIONS = { :maxmem => 0, :maxmemfrac => 0.125, :maxtime => 5.0 }
     VERSION = 3
 
-    def initialize(key, store, encrypt_options = {}, decrypt_options = {})
+    def initialize(password, store, encrypt_options = {}, decrypt_options = {})
       @encrypt_options = DEFAULT_OPTIONS.merge(encrypt_options)
       @decrypt_options = DEFAULT_OPTIONS.merge(decrypt_options)
       @store = store
-      @database = decrypt(key)
+      @password = password
+      @database = decrypt
       @dirty = false
       setup_hooks
     end
@@ -24,18 +25,32 @@ module Keyrack
       @dirty
     end
 
-    def save(key)
-      @store.write(Scrypty.encrypt(@database.to_yaml, key,
-        *@encrypt_options.values_at(:maxmem, :maxmemfrac, :maxtime)))
-      @dirty = false
+    def save(password)
+      if password == @password
+        @store.write(Scrypty.encrypt(@database.to_yaml, password,
+          *@encrypt_options.values_at(:maxmem, :maxmemfrac, :maxtime)))
+        @dirty = false
+        true
+      else
+        false
+      end
+    end
+
+    def change_password(current_password, new_password)
+      if current_password == @password
+        @password = new_password
+        true
+      else
+        false
+      end
     end
 
     private
 
-    def decrypt(key)
+    def decrypt
       data = @store.read
       if data
-        str = Scrypty.decrypt(data, key,
+        str = Scrypty.decrypt(data, @password,
           *@decrypt_options.values_at(:maxmem, :maxmemfrac, :maxtime))
         YAML.load(str)
       else

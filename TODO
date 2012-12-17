@@ -1,4 +1,0 @@
-- Break up runner tests into smaller pieces
-- Break up cucumber features into smaller pieces
-- Handle multiple usernames for the same site
-- Delete empty groups when last entry is deleted

@@ -93,6 +93,35 @@ class TestInteractiveConsole < Test::Unit::TestCase
     send_input "secret", true
 
     menu = get_output("? ")
+    assert_match "1. Foo [dude]", menu
+    send_input "1"
+    assert_equal "secret", clipboard
+
+    menu = get_output("? ")
+    assert_match "[g]roup", menu
+    send_input "g"
+    assert_output_equals "Group: "
+    send_input "Stuff"
+
+    menu = get_output("? ")
+    assert_match "Stuff", menu.lines.first
+    assert_match "[g]roup", menu
+    send_input "g"
+    assert_output_equals "Group: "
+    send_input "More Stuff"
+
+    menu = get_output("? ")
+    assert_match "More Stuff", menu.lines.first
+    assert_match "[u]p", menu
+    send_input "u"
+
+    menu = get_output("? ")
+    assert_match "Stuff", menu.lines.first
+    assert_match "[t]op", menu
+    send_input "t"
+
+    menu = get_output("? ")
+    assert_match "Keyrack Main Menu", menu.lines.first
     assert_match "[s]ave", menu
     send_input "s"
     assert_output_equals "Keyrack password: "

@@ -7,4 +7,5 @@ group :development do
   gem 'guard-test'
   gem 'rb-inotify'
   gem 'debugger'
+  gem 'ffi-ncurses'
 end

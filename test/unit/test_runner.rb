@@ -54,7 +54,7 @@ class TestRunner < Test::Unit::TestCase
 
     seq = SequenceHelper.new('ui sequence')
     seq << @console.expects(:get_password).returns('secret')
-    seq << Keyrack::Store::Filesystem.expects(:new).with('path' => 'foo.db').returns(store)
+    seq << Keyrack::Store::Filesystem.expects(:new).with('path' => File.join(@keyrack_dir, 'foo.db')).returns(store)
     seq << Keyrack::Database.expects(:new).with('secret', store).returns(@database)
     seq << @database.expects(:dirty?).returns(false)
     seq << @console.expects(:menu).with(@menu_options).returns(:quit)

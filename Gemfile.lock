@@ -21,6 +21,11 @@ GEM
       debugger-ruby_core_source (>= 1.1.1)
     debugger-ruby_core_source (1.1.5)
     ffi (1.2.0)
+    ffi-locale (1.0.1)
+      ffi (>= 1.0.9)
+    ffi-ncurses (0.4.0)
+      ffi (>= 1.0.9)
+      ffi-locale (>= 1.0.0)
     guard (1.5.4)
       listen (>= 0.4.2)
       lumberjack (>= 1.0.2)
@@ -56,6 +61,7 @@ PLATFORMS
 DEPENDENCIES
   bundler
   debugger
+  ffi-ncurses
   guard-test
   keyrack!
   mocha

@@ -35,6 +35,14 @@ module Keyrack
         File.open(File.expand_path('config.yml', @config_path), 'w') { |f| f.print(@options.to_yaml) }
       end
 
+      # Expand relative paths, using config_path as parent
+      if @options['store']['type'] == 'filesystem' &&
+            @options['store'].has_key?('path')
+
+        @options['store']['path'] =
+          File.expand_path(@options['store']['path'], @config_path)
+      end
+
       store = Store[@options['store']['type']].new(@options['store'].reject { |k, _| k == 'type' })
       @database = Database.new(password, store)
       main_loop

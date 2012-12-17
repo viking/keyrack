@@ -362,11 +362,61 @@ class TestGroup < Test::Unit::TestCase
     assert called
   end
 
+  test "after_login_added callback for hash-loaded group" do
+    group = new_group({
+      'name' => "Starships",
+      'sites' => {
+        'Enterprise' => {
+          'name' => 'Enterprise',
+          'logins' => {}
+        }
+      },
+      'groups' => {}
+    })
+    site = group.site("Enterprise")
+
+    called = false
+    group.after_login_added do |affected_group, changed_site, username, password|
+      called = true
+      assert_same group, affected_group
+      assert_same site, changed_site
+      assert_equal "picard", username
+      assert_equal "livingston", password
+    end
+    site.add_login("picard", "livingston")
+    assert called
+  end
+
   test "after_username_changed callback" do
     group = new_group("Starships")
     site = new_site("Enterprise")
     group.add_site(site)
     site.add_login("picard", "livingston")
+
+    called = false
+    group.after_username_changed do |affected_group, changed_site, old_username, new_username|
+      called = true
+      assert_same group, affected_group
+      assert_same site, changed_site
+      assert_equal "picard", old_username
+      assert_equal "jean_luc", new_username
+    end
+    site.change_username("picard", "jean_luc")
+    assert called
+  end
+
+  test "after_username_changed callback for hash-loaded group" do
+    group = new_group({
+      'name' => "Starships",
+      'sites' => {
+        'Enterprise' => {
+          'name' => 'Enterprise',
+          'logins' => {'picard' => 'livingston'}
+        }
+      },
+      'groups' => {}
+    })
+    site = group.site("Enterprise")
 
     called = false
     group.after_username_changed do |affected_group, changed_site, old_username, new_username|
@@ -399,11 +449,62 @@ class TestGroup < Test::Unit::TestCase
     assert called
   end
 
+  test "after_password_changed callback for hash-loaded group" do
+    group = new_group({
+      'name' => "Starships",
+      'sites' => {
+        'Enterprise' => {
+          'name' => 'Enterprise',
+          'logins' => {'picard' => 'livingston'}
+        }
+      },
+      'groups' => {}
+    })
+    site = group.site("Enterprise")
+
+    called = false
+    group.after_password_changed do |affected_group, changed_site, username, old_password, new_password|
+      called = true
+      assert_same group, affected_group
+      assert_same site, changed_site
+      assert_equal "picard", username
+      assert_equal "livingston", old_password
+      assert_equal "crusher", new_password
+    end
+    site.change_password("picard", "crusher")
+    assert called
+  end
+
   test "after_login_removed callback" do
     group = new_group("Starships")
     site = new_site("Enterprise")
     group.add_site(site)
     site.add_login("picard", "livingston")
+
+    called = false
+    group.after_login_removed do |affected_group, removed_site, username, password|
+      called = true
+      assert_same group, affected_group
+      assert_same site, removed_site
+      assert_equal "picard", username
+      assert_equal "livingston", password
+    end
+    site.remove_login("picard")
+    assert called
+  end
+
+  test "after_login_removed callback for hash-loaded group" do
+    group = new_group({
+      'name' => "Starships",
+      'sites' => {
+        'Enterprise' => {
+          'name' => 'Enterprise',
+          'logins' => {'picard' => 'livingston'}
+        }
+      },
+      'groups' => {}
+    })
+    site = group.site("Enterprise")
 
     called = false
     group.after_login_removed do |affected_group, removed_site, username, password|

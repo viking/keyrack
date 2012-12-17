@@ -1,6 +1,15 @@
 module Keyrack
   class Group < Hash
     def initialize(arg)
+      @after_site_added = []
+      @after_site_removed = []
+      @after_login_added = []
+      @after_username_changed = []
+      @after_password_changed = []
+      @after_login_removed = []
+      @after_group_added = []
+      @after_group_removed = []
+
       case arg
       when String
         self['name'] = arg
@@ -39,7 +48,8 @@ module Keyrack
           end
 
           begin
-            site = self['sites'][site_name] = Site.new(site_hash)
+            site = Site.new(site_hash)
+            add_site_without_callbacks(site)
           rescue SiteError => e
             raise ArgumentError, "site #{site_name.inspect} is not valid: #{e.message}"
           end
@@ -59,7 +69,8 @@ module Keyrack
           end
 
           begin
-            group = self['groups'][group_name] = Group.new(group_hash)
+            group = Group.new(group_hash)
+            add_group_without_callbacks(group)
           rescue ArgumentError => e
             raise ArgumentError, "group #{group_name.inspect} is not valid: #{e.message}"
           end
@@ -69,15 +80,6 @@ module Keyrack
           end
         end
       end
-
-      @after_site_added = []
-      @after_site_removed = []
-      @after_login_added = []
-      @after_username_changed = []
-      @after_password_changed = []
-      @after_login_removed = []
-      @after_group_added = []
-      @after_group_removed = []
     end
 
     def name
@@ -93,14 +95,7 @@ module Keyrack
     end
 
     def add_site(site)
-      if !site.is_a?(Site)
-        raise GroupError, "site is not a Site"
-      end
-      if sites.has_key?(site.name)
-        raise GroupError, "site already exists"
-      end
-      sites[site.name] = site
-      add_site_hooks_for(site)
+      add_site_without_callbacks(site)
 
       @after_site_added.each do |block|
         block.call(self, site)
@@ -127,13 +122,7 @@ module Keyrack
     end
 
     def add_group(group)
-      if !group.is_a?(Group)
-        raise GroupError, "group is not a Group"
-      end
-      if groups.has_key?(group.name)
-        raise GroupError, "group already exists"
-      end
-      groups[group.name] = group
+      add_group_without_callbacks(group)
 
       @after_group_added.each do |block|
         block.call(self, group)
@@ -196,6 +185,27 @@ module Keyrack
     end
 
     private
+
+    def add_site_without_callbacks(site)
+      if !site.is_a?(Site)
+        raise GroupError, "site is not a Site"
+      end
+      if sites.has_key?(site.name)
+        raise GroupError, "site already exists"
+      end
+      sites[site.name] = site
+      add_site_hooks_for(site)
+    end
+
+    def add_group_without_callbacks(group)
+      if !group.is_a?(Group)
+        raise GroupError, "group is not a Group"
+      end
+      if groups.has_key?(group.name)
+        raise GroupError, "group already exists"
+      end
+      groups[group.name] = group
+    end
 
     def add_site_hooks_for(site)
       site.after_login_added do |site, username, password|

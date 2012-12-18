@@ -13,20 +13,54 @@ module Keyrack
       end
 
       def menu(options)
+        terminal_size = HighLine::SystemExtensions.terminal_size
+
         current_group = options[:group]
         dirty = options[:dirty]
         at_top = options[:at_top]
 
-        choices = {'n' => :new, 'q' => :quit, 'm' => :mode}
-        index = 1
-
         site_names = current_group.site_names
         subgroup_names = current_group.group_names
-        count = site_names.inject(0) do |sum, name|
+        selection_count = site_names.inject(0) do |sum, name|
           sum + current_group.site(name).usernames.length
         end
-        count += subgroup_names.length
-        number_width = count / 10
+        selection_count += subgroup_names.length
+        number_width = selection_count / 10
+
+        # Collect the selections
+        selections = []
+        max_width = 0
+        choices = {'n' => :new, 'q' => :quit, 'm' => :mode}
+        selection_index = 1
+        subgroup_names.each do |group_name|
+          choices[selection_index.to_s] = {:group => group_name}
+          selections << " %#{number_width}d. %s" % [selection_index, @highline.color(group_name, :green)]
+          width = 3 + number_width + group_name.length
+          max_width = width if width > max_width
+          selection_index += 1
+        end
+        site_names.each do |site_name|
+          site = current_group.site(site_name)
+          site.usernames.each do |username|
+            choices[selection_index.to_s] = {:site => site_name, :username => username}
+            selections << " %#{number_width}d. %s [%s]" % [selection_index, site_name, username]
+            width = 6 + number_width + site_name.length + username.length
+            max_width = width if width > max_width
+            selection_index += 1
+          end
+        end
+        multiples = max_width == 0 ? 1 : terminal_size[0] / max_width
+        num_columns =
+          if multiples > 1
+            if (terminal_size[0] % multiples) < (multiples - 1)
+              # If there aren't sufficient spaces, decrease column count
+              multiples - 1
+            else
+              multiples
+            end
+          else
+            1
+          end
 
         if at_top
           @highline.say("=== #{@highline.color("Keyrack Main Menu", :yellow)} ===")
@@ -34,18 +68,20 @@ module Keyrack
           @highline.say("===== #{@highline.color(current_group.name, :green)} =====")
         end
 
-        subgroup_names.each do |group_name|
-          choices[index.to_s] = {:group => group_name}
-          @highline.say(" %#{number_width}d. %s" % [index, @highline.color(group_name, :green)])
-          index += 1
-        end
+        selection_index = 0
+        catch(:stop) do
+          loop do
+            num_columns.downto(1) do |i|
+              selection = selections[selection_index]
+              throw(:stop) if selection.nil?
 
-        site_names.each do |site_name|
-          site = current_group.site(site_name)
-          site.usernames.each do |username|
-            choices[index.to_s] = {:site => site_name, :username => username}
-            @highline.say(" %#{number_width}d. %s [%s]" % [index, site_name, username])
-            index += 1
+              if i == 1 || selection_index == (selection_count - 1)
+                @highline.say(selections[selection_index])
+              else
+                @highline.say(selections[selection_index] + " ")
+              end
+              selection_index += 1
+            end
           end
         end
 

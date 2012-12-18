@@ -21,6 +21,8 @@ class TestConsole < Test::Unit::TestCase
     @highline.stubs(:say)
     HighLine.expects(:new).returns(@highline)
     @console = Keyrack::UI::Console.new
+
+    HighLine::SystemExtensions.stubs(:terminal_size).returns([20, 20])
   end
 
   test "select login from menu" do
@@ -317,5 +319,33 @@ class TestConsole < Test::Unit::TestCase
   test "invalid password" do
     @highline.expects(:say).with("Invalid password.")
     @console.display_invalid_password_notice
+  end
+
+  test "menu prints two columns" do
+    HighLine::SystemExtensions.expects(:terminal_size).returns([70, 32])
+    seq = sequence('say')
+    @highline.expects(:say).with("=== Keyrack Main Menu ===")
+    @highline.expects(:say).with(" 1. Twitter [username] ")
+    @highline.expects(:say).with(" 2. Google [username_1]")
+    @highline.expects(:say).with(" 3. Google [username_2]")
+    @highline.expects(:say).with("Mode: copy")
+    @highline.expects(:say).with("Commands: [n]ew [d]elete [g]roup [m]ode [q]uit")
+
+    @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 d g}) }).returns('q')
+    assert_equal :quit, @console.menu(:group => @top_group, :at_top => true)
+  end
+
+  test "menu prints three columns" do
+    HighLine::SystemExtensions.expects(:terminal_size).returns([80, 32])
+    seq = sequence('say')
+    @highline.expects(:say).with("=== Keyrack Main Menu ===")
+    @highline.expects(:say).with(" 1. Twitter [username] ")
+    @highline.expects(:say).with(" 2. Google [username_1] ")
+    @highline.expects(:say).with(" 3. Google [username_2]")
+    @highline.expects(:say).with("Mode: copy")
+    @highline.expects(:say).with("Commands: [n]ew [d]elete [g]roup [m]ode [q]uit")
+
+    @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 d g}) }).returns('q')
+    assert_equal :quit, @console.menu(:group => @top_group, :at_top => true)
   end
 end

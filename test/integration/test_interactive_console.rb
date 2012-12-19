@@ -35,8 +35,11 @@ class TestInteractiveConsole < Test::Unit::TestCase
         output << data
         @all_data << data
       rescue IO::WaitReadable
-        IO.select([@out], [], [], timeout)
-        retry
+        if IO.select([@out], [], [], timeout).nil?
+          flunk "output timed out"
+        else
+          retry
+        end
       end
     end
     output
@@ -85,7 +88,7 @@ class TestInteractiveConsole < Test::Unit::TestCase
     send_input "Foo"
     assert_output_equals "Username: "
     send_input "dude"
-    assert_output_equals "Generate password? [yn] "
+    assert_output_equals "Generate password? [ync] "
     send_input "n"
     assert_output_equals "Password: "
     send_input "secret", true
@@ -127,7 +130,7 @@ class TestInteractiveConsole < Test::Unit::TestCase
     assert_output_equals "Keyrack password: "
     send_input "secret"
 
-    menu = get_output("? ")
+    menu = get_output("? ", 10)
     assert_match "[q]uit", menu
     send_input "q"
 

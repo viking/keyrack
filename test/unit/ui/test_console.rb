@@ -183,7 +183,7 @@ class TestConsole < Test::Unit::TestCase
     seq = sequence("new entry")
     @highline.expects(:ask).with("Label: ").returns("Foo").in_sequence(seq)
     @highline.expects(:ask).with("Username: ").returns("bar").in_sequence(seq)
-    @highline.expects(:agree).with("Generate password? [yn] ").returns(false).in_sequence(seq)
+    @highline.expects(:ask).with("Generate password? [ync] ").returns("n").in_sequence(seq)
     @highline.expects(:ask).with("Password: ").yields(mock { expects(:echo=).with(false) }).returns("baz").in_sequence(seq)
     @highline.expects(:ask).with("Password (again): ").yields(mock { expects(:echo=).with(false) }).returns("bar").in_sequence(seq)
     @highline.expects(:say).with("Passwords didn't match. Try again!").in_sequence(seq)
@@ -196,14 +196,38 @@ class TestConsole < Test::Unit::TestCase
     seq = sequence("new entry")
     @highline.expects(:ask).with("Label: ").returns("Foo").in_sequence(seq)
     @highline.expects(:ask).with("Username: ").returns("bar").in_sequence(seq)
-    @highline.expects(:agree).with("Generate password? [yn] ").returns(true).in_sequence(seq)
+    @highline.expects(:ask).with("Generate password? [ync] ").returns("y").in_sequence(seq)
     Keyrack::Utils.expects(:generate_password).returns('foobar').in_sequence(seq)
     @highline.expects(:color).with('foobar', :cyan).returns('foobar').in_sequence(seq)
-    @highline.expects(:agree).with("Generated foobar.  Sound good? [yn] ").returns(false).in_sequence(seq)
+    @highline.expects(:ask).with("Generated foobar.  Sound good? [ync] ").returns("n").in_sequence(seq)
     Keyrack::Utils.expects(:generate_password).returns('foobar').in_sequence(seq)
     @highline.expects(:color).with('foobar', :cyan).returns('foobar').in_sequence(seq)
-    @highline.expects(:agree).with("Generated foobar.  Sound good? [yn] ").returns(true).in_sequence(seq)
+    @highline.expects(:ask).with("Generated foobar.  Sound good? [ync] ").returns("y").in_sequence(seq)
     assert_equal({:site => "Foo", :username => "bar", :password => "foobar"}, @console.get_new_entry)
+  end
+
+  test "get new entry with cancel" do
+    seq = sequence("new entry")
+    @highline.expects(:ask).with("Label: ").returns("Foo").in_sequence(seq)
+    @highline.expects(:ask).with("Username: ").returns("bar").in_sequence(seq)
+
+    question = mock('question')
+    question.expects(:in=).with(%w{y n c})
+    @highline.expects(:ask).with("Generate password? [ync] ").yields(question).returns('c').in_sequence(seq)
+    assert_nil @console.get_new_entry
+  end
+
+  test "get new entry with generated password cancel" do
+    seq = sequence("new entry")
+    @highline.expects(:ask).with("Label: ").returns("Foo").in_sequence(seq)
+    @highline.expects(:ask).with("Username: ").returns("bar").in_sequence(seq)
+    @highline.expects(:ask).with("Generate password? [ync] ").returns("y").in_sequence(seq)
+    Keyrack::Utils.expects(:generate_password).returns('foobar').in_sequence(seq)
+    @highline.expects(:color).with('foobar', :cyan).returns('foobar').in_sequence(seq)
+    @highline.expects(:ask).with("Generated foobar.  Sound good? [ync] ").returns('c').in_sequence(seq)
+    @highline.expects(:ask).with("Password: ").yields(mock { expects(:echo=).with(false) }).returns("baz").in_sequence(seq)
+    @highline.expects(:ask).with("Password (again): ").yields(mock { expects(:echo=).with(false) }).returns("baz").in_sequence(seq)
+    assert_equal({:site => "Foo", :username => "bar", :password => "baz"}, @console.get_new_entry)
   end
 
   test "display first time notice" do

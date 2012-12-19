@@ -137,6 +137,20 @@ class TestRunner < Test::Unit::TestCase
     runner = Keyrack::Runner.new(["-d", @keyrack_dir])
   end
 
+  test "cancel adding entry" do
+    setup_config
+
+    seq = SequenceHelper.new('ui sequence')
+    seq << @database.expects(:dirty?).returns(false)
+    seq << @console.expects(:menu).with(@menu_options).returns(:new)
+    seq << @console.expects(:get_new_entry).returns(nil)
+
+    seq << @database.expects(:dirty?).returns(false)
+    seq << @console.expects(:menu).with(@menu_options).returns(:quit)
+
+    runner = Keyrack::Runner.new(["-d", @keyrack_dir])
+  end
+
   test "delete entry" do
     setup_config
 

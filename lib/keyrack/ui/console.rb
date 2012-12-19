@@ -171,24 +171,16 @@ module Keyrack
         result = {}
         result[:site]     = @highline.ask("Label: ")
         result[:username] = @highline.ask("Username: ")
-        if @highline.agree("Generate password? [yn] ")
-          loop do
-            password = Utils.generate_password
-            if @highline.agree("Generated #{@highline.color(password, :cyan)}.  Sound good? [yn] ")
-              result[:password] = password
-              break
-            end
+        case @highline.ask("Generate password? [ync] ") { |q| q.in = %w{y n c} }
+        when "y"
+          result[:password] = get_generated_password
+          if result[:password].nil?
+            result[:password] = get_manual_password
           end
-        else
-          loop do
-            password = @highline.ask("Password: ") { |q| q.echo = false }
-            confirmation = @highline.ask("Password (again): ") { |q| q.echo = false }
-            if password == confirmation
-              result[:password] = password
-              break
-            end
-            @highline.say("Passwords didn't match. Try again!")
-          end
+        when "n"
+          result[:password] = get_manual_password
+        when "c"
+          return nil
         end
         result
       end
@@ -260,6 +252,35 @@ module Keyrack
 
       def display_invalid_password_notice
         @highline.say("Invalid password.")
+      end
+
+      def get_generated_password
+        password = nil
+        loop do
+          password = Utils.generate_password
+          colored_password = @highline.color(password, :cyan)
+          case @highline.ask("Generated #{colored_password}.  Sound good? [ync] ") { |q| q.in = %w{y n c} }
+          when "y"
+            break
+          when "c"
+            password = nil
+            break
+          end
+        end
+        password
+      end
+
+      def get_manual_password
+        password = nil
+        loop do
+          password = @highline.ask("Password: ") { |q| q.echo = false }
+          confirmation = @highline.ask("Password (again): ") { |q| q.echo = false }
+          if password == confirmation
+            break
+          end
+          @highline.say("Passwords didn't match. Try again!")
+        end
+        password
       end
     end
   end

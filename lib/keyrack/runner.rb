@@ -63,6 +63,7 @@ module Keyrack
         case choice
         when :new
           result = @ui.get_new_entry
+          next if result.nil?
 
           new_site = false
           existing_sites = current_group.site_names

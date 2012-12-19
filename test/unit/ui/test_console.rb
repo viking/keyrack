@@ -323,9 +323,10 @@ class TestConsole < Test::Unit::TestCase
 
   test "menu prints two columns" do
     HighLine::SystemExtensions.expects(:terminal_size).returns([70, 32])
+    @twitter.stubs(:usernames).returns(%w{foo})
     seq = sequence('say')
     @highline.expects(:say).with("=== Keyrack Main Menu ===")
-    @highline.expects(:say).with(" 1. Twitter [username] ")
+    @highline.expects(:say).with(" 1. Twitter [foo]       ")
     @highline.expects(:say).with(" 2. Google [username_1]")
     @highline.expects(:say).with(" 3. Google [username_2]")
     @highline.expects(:say).with("Mode: copy")
@@ -337,9 +338,10 @@ class TestConsole < Test::Unit::TestCase
 
   test "menu prints three columns" do
     HighLine::SystemExtensions.expects(:terminal_size).returns([80, 32])
+    @twitter.stubs(:usernames).returns(%w{foo})
     seq = sequence('say')
     @highline.expects(:say).with("=== Keyrack Main Menu ===")
-    @highline.expects(:say).with(" 1. Twitter [username] ")
+    @highline.expects(:say).with(" 1. Twitter [foo]       ")
     @highline.expects(:say).with(" 2. Google [username_1] ")
     @highline.expects(:say).with(" 3. Google [username_2]")
     @highline.expects(:say).with("Mode: copy")

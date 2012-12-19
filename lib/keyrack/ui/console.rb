@@ -43,8 +43,8 @@ module Keyrack
           site = current_group.site(site_name)
           site.usernames.each do |username|
             choices[selection_index.to_s] = {:site => site_name, :username => username}
-            selections << " %#{number_width}d. %s [%s]" % [selection_index, site_name, username]
-            width = 6 + number_width + site_name.length + username.length
+            selections << (selection = " %#{number_width}d. %s [%s]" % [selection_index, site_name, username])
+            width = selection.length
             max_width = width if width > max_width
             selection_index += 1
           end
@@ -78,7 +78,7 @@ module Keyrack
               if i == 1 || selection_index == (selection_count - 1)
                 @highline.say(selections[selection_index])
               else
-                @highline.say(selections[selection_index] + " ")
+                @highline.say("%-#{max_width}s " % selections[selection_index])
               end
               selection_index += 1
             end

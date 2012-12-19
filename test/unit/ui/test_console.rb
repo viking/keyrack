@@ -161,7 +161,7 @@ class TestConsole < Test::Unit::TestCase
       end
 
     @highline.expects(:color).with("Foo", :green).returns("Foo")
-    @highline.expects(:say).with("===== Foo =====")
+    @highline.expects(:say).with("========= Foo =========")
     @highline.expects(:say).with(" 1. Facebook [username]")
     @highline.expects(:say).with("Mode: copy")
     @highline.expects(:say).with("Commands: [n]ew [d]elete [g]roup [t]op [m]ode [q]uit")
@@ -330,7 +330,7 @@ class TestConsole < Test::Unit::TestCase
   test "top command" do
     foo_group = stub('Foo group', :name => 'Foo', :site_names => [], :group_names => [])
     @highline.stubs(:color).with('Foo', instance_of(Symbol)).returns('Foo')
-    @highline.expects(:say).with("===== Foo =====")
+    @highline.expects(:say).with("=== Foo ===")
     @highline.expects(:say).with("Mode: copy")
     @highline.expects(:say).with("Commands: [n]ew [g]roup [t]op [m]ode [q]uit")
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m g t}) }).returns('t')
@@ -340,7 +340,7 @@ class TestConsole < Test::Unit::TestCase
   test "up command" do
     foo_group = stub('Foo group', :name => 'Foo', :site_names => [], :group_names => [])
     @highline.stubs(:color).with('Foo', instance_of(Symbol)).returns('Foo')
-    @highline.expects(:say).with("===== Foo =====")
+    @highline.expects(:say).with("=== Foo ===")
     @highline.expects(:say).with("Mode: copy")
     @highline.expects(:say).with("Commands: [n]ew [g]roup [u]p [t]op [m]ode [q]uit")
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m g u t}) }).returns('u')
@@ -353,10 +353,14 @@ class TestConsole < Test::Unit::TestCase
   end
 
   test "menu prints two columns" do
+    # ============== Keyrack Main Menu =============
+    # 1. Twitter [foo]        2. Google [username_1]
+    # 3. Google [username_2]
+
     HighLine::SystemExtensions.expects(:terminal_size).returns([70, 32])
     @twitter.stubs(:usernames).returns(%w{foo})
     seq = sequence('say')
-    @highline.expects(:say).with("=== Keyrack Main Menu ===")
+    @highline.expects(:say).with("============== Keyrack Main Menu ==============")
     @highline.expects(:say).with(" 1. Twitter [foo]       ")
     @highline.expects(:say).with(" 2. Google [username_1]")
     @highline.expects(:say).with(" 3. Google [username_2]")
@@ -371,7 +375,8 @@ class TestConsole < Test::Unit::TestCase
     HighLine::SystemExtensions.expects(:terminal_size).returns([80, 32])
     @twitter.stubs(:usernames).returns(%w{foo})
     seq = sequence('say')
-    @highline.expects(:say).with("=== Keyrack Main Menu ===")
+    @highline.expects(:say).with('========================== Keyrack Main Menu ==========================')
+    # 1. Twitter [foo]        2. Google [username_1]  3. Google [username_2]
     @highline.expects(:say).with(" 1. Twitter [foo]       ")
     @highline.expects(:say).with(" 2. Google [username_1] ")
     @highline.expects(:say).with(" 3. Google [username_2]")

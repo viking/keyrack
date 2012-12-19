@@ -67,12 +67,19 @@ module Keyrack
           end
         #puts "Terminal width: %d; Max width: %d; Multiples: %d; Columns: %d" %
           #[ terminal_size[0], max_width, multiples, num_columns ]
+        menu_width = num_columns * max_width + (num_columns - 1)
 
         if at_top
-          @highline.say("=== #{@highline.color("Keyrack Main Menu", :yellow)} ===")
+          title = @highline.color("Keyrack Main Menu", :yellow)
+          title_width = 17
         else
-          @highline.say("===== #{@highline.color(current_group.name, :green)} =====")
+          title = @highline.color(current_group.name, :green)
+          title_width = current_group.name.length
         end
+        padding_total = menu_width - title_width - 2
+        padding_left = [padding_total / 2, 3].max
+        padding_right = [padding_total - padding_left, 3].max
+        @highline.say(("=" * padding_left) + " #{title} " + ("=" * padding_right))
 
         selection_index = 0
         catch(:stop) do

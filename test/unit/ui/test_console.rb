@@ -18,7 +18,7 @@ class TestConsole < Test::Unit::TestCase
     @highline = stub('highline')
     @highline.stubs(:color).with("Keyrack Main Menu", instance_of(Symbol)).
       returns("Keyrack Main Menu")
-    @highline.stubs(:say)
+    #@highline.stubs(:say)
     HighLine.expects(:new).returns(@highline)
     @console = Keyrack::UI::Console.new
 
@@ -69,13 +69,12 @@ class TestConsole < Test::Unit::TestCase
   end
 
   test "select new from menu" do
-    # === Keyrack Main Menu ===
-    #  1. Twitter [username]
-    #  n. New entry
-    #  d. Delete entry
-    #  g. New group
-    #  q. Quit
-
+    @highline.expects(:say).with("=== Keyrack Main Menu ===")
+    @highline.expects(:say).with(" 1. Twitter [username]")
+    @highline.expects(:say).with(" 2. Google [username_1]")
+    @highline.expects(:say).with(" 3. Google [username_2]")
+    @highline.expects(:say).with("Mode: copy")
+    @highline.expects(:say).with("Commands: [n]ew [d]elete [g]roup [m]ode [q]uit")
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 d g}) }).returns('n')
     assert_equal :new, @console.menu(:group => @top_group, :at_top => true)
   end
@@ -88,6 +87,12 @@ class TestConsole < Test::Unit::TestCase
     #  g. New group
     #  q. Quit
 
+    @highline.expects(:say).with("=== Keyrack Main Menu ===")
+    @highline.expects(:say).with(" 1. Twitter [username]")
+    @highline.expects(:say).with(" 2. Google [username_1]")
+    @highline.expects(:say).with(" 3. Google [username_2]")
+    @highline.expects(:say).with("Mode: copy")
+    @highline.expects(:say).with("Commands: [n]ew [d]elete [g]roup [m]ode [q]uit")
     question = mock('question')
     question.expects(:in=).with(%w{n q m 1 2 3 d g})
     @highline.expects(:ask).yields(question).returns('d')
@@ -95,25 +100,35 @@ class TestConsole < Test::Unit::TestCase
   end
 
   test "select quit from menu" do
-    # === Keyrack Main Menu ===
-    #  1. Twitter [username]
-    #  n. New entry
-    #  d. Delete entry
-    #  g. New group
-    #  q. Quit
-
+    @highline.expects(:say).with("=== Keyrack Main Menu ===")
+    @highline.expects(:say).with(" 1. Twitter [username]")
+    @highline.expects(:say).with(" 2. Google [username_1]")
+    @highline.expects(:say).with(" 3. Google [username_2]")
+    @highline.expects(:say).with("Mode: copy")
+    @highline.expects(:say).with("Commands: [n]ew [d]elete [g]roup [m]ode [q]uit")
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 d g}) }).returns('q')
     assert_equal :quit, @console.menu(:group => @top_group, :at_top => true)
   end
 
   test "select quit from menu when database is dirty" do
+    @highline.expects(:say).with("=== Keyrack Main Menu ===")
+    @highline.expects(:say).with(" 1. Twitter [username]")
+    @highline.expects(:say).with(" 2. Google [username_1]")
+    @highline.expects(:say).with(" 3. Google [username_2]")
+    @highline.expects(:say).with("Mode: copy")
+    @highline.expects(:say).with("Commands: [n]ew [d]elete [g]roup [s]ave [m]ode [q]uit")
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 d g s}) }).returns('q')
     @highline.expects(:agree).with("Really quit?  You have unsaved changes! [yn] ").returns(false)
     assert_equal nil, @console.menu(:group => @top_group, :at_top => true, :dirty => true)
   end
 
   test "select save from menu" do
-    @highline.expects(:say).with { |string| string =~ /\[s\]ave/ }
+    @highline.expects(:say).with("=== Keyrack Main Menu ===")
+    @highline.expects(:say).with(" 1. Twitter [username]")
+    @highline.expects(:say).with(" 2. Google [username_1]")
+    @highline.expects(:say).with(" 3. Google [username_2]")
+    @highline.expects(:say).with("Mode: copy")
+    @highline.expects(:say).with("Commands: [n]ew [d]elete [g]roup [s]ave [m]ode [q]uit")
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 d g s}) }).returns('s')
     assert_equal :save, @console.menu(:group => @top_group, :at_top => true, :dirty => true)
   end
@@ -124,7 +139,13 @@ class TestConsole < Test::Unit::TestCase
     @top_group.stubs(:group).with('Blargh').returns(blargh)
 
     @highline.stubs(:color).with('Blargh', :green).returns('Blargh')
+    @highline.expects(:say).with("=== Keyrack Main Menu ===")
     @highline.expects(:say).with(" 1. Blargh")
+    @highline.expects(:say).with(" 2. Twitter [username]")
+    @highline.expects(:say).with(" 3. Google [username_1]")
+    @highline.expects(:say).with(" 4. Google [username_2]")
+    @highline.expects(:say).with("Mode: copy")
+    @highline.expects(:say).with("Commands: [n]ew [d]elete [g]roup [m]ode [q]uit")
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 4 d g}) }).returns('1')
     assert_equal({:group => blargh}, @console.menu(:group => @top_group, :at_top => true))
   end
@@ -289,6 +310,12 @@ class TestConsole < Test::Unit::TestCase
   test "switching mode from menu" do
     @console.mode = :copy
 
+    @highline.expects(:say).with("=== Keyrack Main Menu ===")
+    @highline.expects(:say).with(" 1. Twitter [username]")
+    @highline.expects(:say).with(" 2. Google [username_1]")
+    @highline.expects(:say).with(" 3. Google [username_2]")
+    @highline.expects(:say).with("Mode: copy")
+    @highline.expects(:say).with("Commands: [n]ew [d]elete [g]roup [m]ode [q]uit")
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 d g}) }).returns('m')
     assert_nil @console.menu(:group => @top_group, :at_top => true)
     assert_equal :print, @console.mode
@@ -303,6 +330,8 @@ class TestConsole < Test::Unit::TestCase
   test "top command" do
     foo_group = stub('Foo group', :name => 'Foo', :site_names => [], :group_names => [])
     @highline.stubs(:color).with('Foo', instance_of(Symbol)).returns('Foo')
+    @highline.expects(:say).with("===== Foo =====")
+    @highline.expects(:say).with("Mode: copy")
     @highline.expects(:say).with("Commands: [n]ew [g]roup [t]op [m]ode [q]uit")
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m g t}) }).returns('t')
     assert_equal :top, @console.menu(:group => foo_group, :at_top => false)
@@ -311,6 +340,8 @@ class TestConsole < Test::Unit::TestCase
   test "up command" do
     foo_group = stub('Foo group', :name => 'Foo', :site_names => [], :group_names => [])
     @highline.stubs(:color).with('Foo', instance_of(Symbol)).returns('Foo')
+    @highline.expects(:say).with("===== Foo =====")
+    @highline.expects(:say).with("Mode: copy")
     @highline.expects(:say).with("Commands: [n]ew [g]roup [u]p [t]op [m]ode [q]uit")
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m g u t}) }).returns('u')
     assert_equal :up, @console.menu(:group => foo_group, :at_top => false, :enable_up => true)

@@ -34,8 +34,11 @@ module Keyrack
         selection_index = 1
         subgroup_names.each do |group_name|
           choices[selection_index.to_s] = {:group => group_name}
-          selections << " %#{number_width}d. %s" % [selection_index, @highline.color(group_name, :green)]
-          width = 3 + number_width + group_name.length
+          template = " %#{number_width}d. %%s" % selection_index
+          colorized = template % @highline.color(group_name, :green)
+          uncolorized = template % group_name
+          width = uncolorized.length
+          selections.push({ :width => width, :text => colorized })
           max_width = width if width > max_width
           selection_index += 1
         end
@@ -43,8 +46,9 @@ module Keyrack
           site = current_group.site(site_name)
           site.usernames.each do |username|
             choices[selection_index.to_s] = {:site => site_name, :username => username}
-            selections << (selection = " %#{number_width}d. %s [%s]" % [selection_index, site_name, username])
-            width = selection.length
+            text = " %#{number_width}d. %s [%s]" % [selection_index, site_name, username]
+            width = text.length
+            selections.push({ :width => width, :text => text })
             max_width = width if width > max_width
             selection_index += 1
           end
@@ -52,7 +56,7 @@ module Keyrack
         multiples = max_width == 0 ? 1 : terminal_size[0] / max_width
         num_columns =
           if multiples > 1
-            if (terminal_size[0] % multiples) < (multiples - 1)
+            if (terminal_size[0] - (multiples * max_width)) < (multiples - 1)
               # If there aren't sufficient spaces, decrease column count
               multiples - 1
             else
@@ -61,6 +65,8 @@ module Keyrack
           else
             1
           end
+        #puts "Terminal width: %d; Max width: %d; Multiples: %d; Columns: %d" %
+          #[ terminal_size[0], max_width, multiples, num_columns ]
 
         if at_top
           @highline.say("=== #{@highline.color("Keyrack Main Menu", :yellow)} ===")
@@ -76,9 +82,10 @@ module Keyrack
               throw(:stop) if selection.nil?
 
               if i == 1 || selection_index == (selection_count - 1)
-                @highline.say(selections[selection_index])
+                @highline.say(selection[:text])
               else
-                @highline.say("%-#{max_width}s " % selections[selection_index])
+                spaces = max_width - selection[:width] + 1
+                @highline.say(selection[:text] + (" " * spaces))
               end
               selection_index += 1
             end

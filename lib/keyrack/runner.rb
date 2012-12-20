@@ -85,6 +85,7 @@ module Keyrack
           current_group.add_site(site)  if new_site
         when :edit
           result = @ui.choose_entry_to_edit(current_group)
+          next if result.nil?
           site_name, username = result.values_at(:site, :username)
           site = current_group.site(site_name)
 

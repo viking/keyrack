@@ -28,9 +28,9 @@ class TestConsole < Test::Unit::TestCase
   test "select login from menu" do
     seq = sequence('say')
     @highline.expects(:say).with("=== Keyrack Main Menu ===")
-    @highline.expects(:say).with(" 1. Twitter [username]")
-    @highline.expects(:say).with(" 2. Google [username_1]")
-    @highline.expects(:say).with(" 3. Google [username_2]")
+    @highline.expects(:say).with("1. Twitter [username]")
+    @highline.expects(:say).with("2. Google [username_1]")
+    @highline.expects(:say).with("3. Google [username_2]")
     @highline.expects(:say).with("Mode: copy")
     @highline.expects(:say).with("Commands: [n]ew [e]dit [g]roup [m]ode [q]uit")
 
@@ -45,9 +45,9 @@ class TestConsole < Test::Unit::TestCase
     seq = sequence('say')
     @console.mode = :print
     @highline.expects(:say).with("=== Keyrack Main Menu ===")
-    @highline.expects(:say).with(" 1. Twitter [username]")
-    @highline.expects(:say).with(" 2. Google [username_1]")
-    @highline.expects(:say).with(" 3. Google [username_2]")
+    @highline.expects(:say).with("1. Twitter [username]")
+    @highline.expects(:say).with("2. Google [username_1]")
+    @highline.expects(:say).with("3. Google [username_2]")
     @highline.expects(:say).with("Mode: print")
     @highline.expects(:say).with("Commands: [n]ew [e]dit [g]roup [m]ode [q]uit")
 
@@ -70,9 +70,9 @@ class TestConsole < Test::Unit::TestCase
 
   test "select new from menu" do
     @highline.expects(:say).with("=== Keyrack Main Menu ===")
-    @highline.expects(:say).with(" 1. Twitter [username]")
-    @highline.expects(:say).with(" 2. Google [username_1]")
-    @highline.expects(:say).with(" 3. Google [username_2]")
+    @highline.expects(:say).with("1. Twitter [username]")
+    @highline.expects(:say).with("2. Google [username_1]")
+    @highline.expects(:say).with("3. Google [username_2]")
     @highline.expects(:say).with("Mode: copy")
     @highline.expects(:say).with("Commands: [n]ew [e]dit [g]roup [m]ode [q]uit")
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 e g}) }).returns('n')
@@ -81,9 +81,9 @@ class TestConsole < Test::Unit::TestCase
 
   test "select edit from menu" do
     @highline.expects(:say).with("=== Keyrack Main Menu ===")
-    @highline.expects(:say).with(" 1. Twitter [username]")
-    @highline.expects(:say).with(" 2. Google [username_1]")
-    @highline.expects(:say).with(" 3. Google [username_2]")
+    @highline.expects(:say).with("1. Twitter [username]")
+    @highline.expects(:say).with("2. Google [username_1]")
+    @highline.expects(:say).with("3. Google [username_2]")
     @highline.expects(:say).with("Mode: copy")
     @highline.expects(:say).with("Commands: [n]ew [e]dit [g]roup [m]ode [q]uit")
     question = mock('question')
@@ -94,9 +94,9 @@ class TestConsole < Test::Unit::TestCase
 
   test "select quit from menu" do
     @highline.expects(:say).with("=== Keyrack Main Menu ===")
-    @highline.expects(:say).with(" 1. Twitter [username]")
-    @highline.expects(:say).with(" 2. Google [username_1]")
-    @highline.expects(:say).with(" 3. Google [username_2]")
+    @highline.expects(:say).with("1. Twitter [username]")
+    @highline.expects(:say).with("2. Google [username_1]")
+    @highline.expects(:say).with("3. Google [username_2]")
     @highline.expects(:say).with("Mode: copy")
     @highline.expects(:say).with("Commands: [n]ew [e]dit [g]roup [m]ode [q]uit")
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 e g}) }).returns('q')
@@ -105,9 +105,9 @@ class TestConsole < Test::Unit::TestCase
 
   test "select quit from menu when database is dirty" do
     @highline.expects(:say).with("=== Keyrack Main Menu ===")
-    @highline.expects(:say).with(" 1. Twitter [username]")
-    @highline.expects(:say).with(" 2. Google [username_1]")
-    @highline.expects(:say).with(" 3. Google [username_2]")
+    @highline.expects(:say).with("1. Twitter [username]")
+    @highline.expects(:say).with("2. Google [username_1]")
+    @highline.expects(:say).with("3. Google [username_2]")
     @highline.expects(:say).with("Mode: copy")
     @highline.expects(:say).with("Commands: [n]ew [e]dit [g]roup [s]ave [m]ode [q]uit")
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 e g s}) }).returns('q')
@@ -117,9 +117,9 @@ class TestConsole < Test::Unit::TestCase
 
   test "select save from menu" do
     @highline.expects(:say).with("=== Keyrack Main Menu ===")
-    @highline.expects(:say).with(" 1. Twitter [username]")
-    @highline.expects(:say).with(" 2. Google [username_1]")
-    @highline.expects(:say).with(" 3. Google [username_2]")
+    @highline.expects(:say).with("1. Twitter [username]")
+    @highline.expects(:say).with("2. Google [username_1]")
+    @highline.expects(:say).with("3. Google [username_2]")
     @highline.expects(:say).with("Mode: copy")
     @highline.expects(:say).with("Commands: [n]ew [e]dit [g]roup [s]ave [m]ode [q]uit")
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 e g s}) }).returns('s')
@@ -133,10 +133,10 @@ class TestConsole < Test::Unit::TestCase
 
     @highline.stubs(:color).with('Blargh', :green).returns('Blargh')
     @highline.expects(:say).with("=== Keyrack Main Menu ===")
-    @highline.expects(:say).with(" 1. Blargh")
-    @highline.expects(:say).with(" 2. Twitter [username]")
-    @highline.expects(:say).with(" 3. Google [username_1]")
-    @highline.expects(:say).with(" 4. Google [username_2]")
+    @highline.expects(:say).with("1. Blargh")
+    @highline.expects(:say).with("2. Twitter [username]")
+    @highline.expects(:say).with("3. Google [username_1]")
+    @highline.expects(:say).with("4. Google [username_2]")
     @highline.expects(:say).with("Mode: copy")
     @highline.expects(:say).with("Commands: [n]ew [e]dit [g]roup [m]ode [q]uit")
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 4 e g}) }).returns('1')
@@ -154,8 +154,8 @@ class TestConsole < Test::Unit::TestCase
       end
 
     @highline.expects(:color).with("Foo", :green).returns("Foo")
-    @highline.expects(:say).with("========= Foo =========")
-    @highline.expects(:say).with(" 1. Facebook [username]")
+    @highline.expects(:say).with("======== Foo =========")
+    @highline.expects(:say).with("1. Facebook [username]")
     @highline.expects(:say).with("Mode: copy")
     @highline.expects(:say).with("Commands: [n]ew [e]dit [g]roup [t]op [m]ode [q]uit")
 
@@ -270,28 +270,26 @@ class TestConsole < Test::Unit::TestCase
   end
 
   test "choose entry to edit" do
-    seq = sequence("editing")
-    @highline.expects(:say).with("Choose entry to edit:").in_sequence(seq)
-    @highline.expects(:say).with(" 1. Twitter [username]").in_sequence(seq)
-    @highline.expects(:say).with(" 2. Google [username_1]").in_sequence(seq)
-    @highline.expects(:say).with(" 3. Google [username_2]").in_sequence(seq)
-    @highline.expects(:say).with(" c. Cancel").in_sequence(seq)
-    @highline.expects(:ask).yields(mock {
-      expects(:in=).with(%w{c 1 2 3})
-    }).returns('1').in_sequence(seq)
+    seq = SequenceHelper.new("editing")
+    @highline.expects(:color).with("Choose entry", instance_of(Symbol)).returns("Choose entry")
+    seq << @highline.expects(:say).with('==== Choose entry ====')
+    seq << @highline.expects(:say).with("1. Twitter [username]")
+    seq << @highline.expects(:say).with("2. Google [username_1]")
+    seq << @highline.expects(:say).with("3. Google [username_2]")
+    seq << @highline.expects(:say).with("c. Cancel")
+    seq << @highline.expects(:ask).yields(mock { expects(:in=).with(%w{c 1 2 3}) }).returns('1')
     assert_equal({:site => 'Twitter', :username => 'username'}, @console.choose_entry_to_edit(@top_group))
   end
 
   test "choose entry to edit with cancel" do
-    seq = sequence("editing")
-    @highline.expects(:say).with("Choose entry to edit:").in_sequence(seq)
-    @highline.expects(:say).with(" 1. Twitter [username]").in_sequence(seq)
-    @highline.expects(:say).with(" 2. Google [username_1]").in_sequence(seq)
-    @highline.expects(:say).with(" 3. Google [username_2]").in_sequence(seq)
-    @highline.expects(:say).with(" c. Cancel").in_sequence(seq)
-    @highline.expects(:ask).yields(mock {
-      expects(:in=).with(%w{c 1 2 3})
-    }).returns('c').in_sequence(seq)
+    seq = SequenceHelper.new("editing")
+    @highline.expects(:color).with("Choose entry", instance_of(Symbol)).returns("Choose entry")
+    seq << @highline.expects(:say).with('==== Choose entry ====')
+    seq << @highline.expects(:say).with("1. Twitter [username]")
+    seq << @highline.expects(:say).with("2. Google [username_1]")
+    seq << @highline.expects(:say).with("3. Google [username_2]")
+    seq << @highline.expects(:say).with("c. Cancel")
+    seq << @highline.expects(:ask).yields(mock { expects(:in=).with(%w{c 1 2 3}) }).returns('c')
     assert_nil @console.choose_entry_to_edit(@top_group)
   end
 
@@ -301,10 +299,10 @@ class TestConsole < Test::Unit::TestCase
     @highline.expects(:color).with("Twitter [username]", instance_of(Symbol)).
       returns("Twitter [username]")
     @highline.expects(:say).with("Editing entry: Twitter [username]").in_sequence(seq)
-    @highline.expects(:say).with(" u. Change username").in_sequence(seq)
-    @highline.expects(:say).with(" p. Change password").in_sequence(seq)
-    @highline.expects(:say).with(" d. Delete").in_sequence(seq)
-    @highline.expects(:say).with(" c. Cancel").in_sequence(seq)
+    @highline.expects(:say).with("u. Change username").in_sequence(seq)
+    @highline.expects(:say).with("p. Change password").in_sequence(seq)
+    @highline.expects(:say).with("d. Delete").in_sequence(seq)
+    @highline.expects(:say).with("c. Cancel").in_sequence(seq)
     @highline.expects(:ask).yields(mock {
       expects(:in=).with(%w{u p d c})
     }).returns('u').in_sequence(seq)
@@ -319,10 +317,10 @@ class TestConsole < Test::Unit::TestCase
     @highline.expects(:color).with("Twitter [username]", instance_of(Symbol)).
       returns("Twitter [username]")
     @highline.expects(:say).with("Editing entry: Twitter [username]").in_sequence(seq)
-    @highline.expects(:say).with(" u. Change username").in_sequence(seq)
-    @highline.expects(:say).with(" p. Change password").in_sequence(seq)
-    @highline.expects(:say).with(" d. Delete").in_sequence(seq)
-    @highline.expects(:say).with(" c. Cancel").in_sequence(seq)
+    @highline.expects(:say).with("u. Change username").in_sequence(seq)
+    @highline.expects(:say).with("p. Change password").in_sequence(seq)
+    @highline.expects(:say).with("d. Delete").in_sequence(seq)
+    @highline.expects(:say).with("c. Cancel").in_sequence(seq)
     @highline.expects(:ask).yields(mock {
       expects(:in=).with(%w{u p d c})
     }).returns('p').in_sequence(seq)
@@ -337,10 +335,10 @@ class TestConsole < Test::Unit::TestCase
     @highline.expects(:color).with("Twitter [username]", instance_of(Symbol)).
       returns("Twitter [username]")
     @highline.expects(:say).with("Editing entry: Twitter [username]").in_sequence(seq)
-    @highline.expects(:say).with(" u. Change username").in_sequence(seq)
-    @highline.expects(:say).with(" p. Change password").in_sequence(seq)
-    @highline.expects(:say).with(" d. Delete").in_sequence(seq)
-    @highline.expects(:say).with(" c. Cancel").in_sequence(seq)
+    @highline.expects(:say).with("u. Change username").in_sequence(seq)
+    @highline.expects(:say).with("p. Change password").in_sequence(seq)
+    @highline.expects(:say).with("d. Delete").in_sequence(seq)
+    @highline.expects(:say).with("c. Cancel").in_sequence(seq)
     @highline.expects(:ask).yields(mock {
       expects(:in=).with(%w{u p d c})
     }).returns('d').in_sequence(seq)
@@ -355,10 +353,10 @@ class TestConsole < Test::Unit::TestCase
     @highline.expects(:color).with("Twitter [username]", instance_of(Symbol)).
       returns("Twitter [username]")
     @highline.expects(:say).with("Editing entry: Twitter [username]").in_sequence(seq)
-    @highline.expects(:say).with(" u. Change username").in_sequence(seq)
-    @highline.expects(:say).with(" p. Change password").in_sequence(seq)
-    @highline.expects(:say).with(" d. Delete").in_sequence(seq)
-    @highline.expects(:say).with(" c. Cancel").in_sequence(seq)
+    @highline.expects(:say).with("u. Change username").in_sequence(seq)
+    @highline.expects(:say).with("p. Change password").in_sequence(seq)
+    @highline.expects(:say).with("d. Delete").in_sequence(seq)
+    @highline.expects(:say).with("c. Cancel").in_sequence(seq)
     @highline.expects(:ask).yields(mock {
       expects(:in=).with(%w{u p d c})
     }).returns('c').in_sequence(seq)
@@ -378,9 +376,9 @@ class TestConsole < Test::Unit::TestCase
     @console.mode = :copy
 
     @highline.expects(:say).with("=== Keyrack Main Menu ===")
-    @highline.expects(:say).with(" 1. Twitter [username]")
-    @highline.expects(:say).with(" 2. Google [username_1]")
-    @highline.expects(:say).with(" 3. Google [username_2]")
+    @highline.expects(:say).with("1. Twitter [username]")
+    @highline.expects(:say).with("2. Google [username_1]")
+    @highline.expects(:say).with("3. Google [username_2]")
     @highline.expects(:say).with("Mode: copy")
     @highline.expects(:say).with("Commands: [n]ew [e]dit [g]roup [m]ode [q]uit")
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 e g}) }).returns('m')
@@ -430,13 +428,13 @@ class TestConsole < Test::Unit::TestCase
     # 1. Twitter [foo]        2. Google [username_1]
     # 3. Google [username_2]
 
-    HighLine::SystemExtensions.expects(:terminal_size).returns([70, 32])
+    HighLine::SystemExtensions.expects(:terminal_size).returns([60, 32])
     @twitter.stubs(:usernames).returns(%w{foo})
     seq = sequence('say')
-    @highline.expects(:say).with("============== Keyrack Main Menu ==============")
-    @highline.expects(:say).with(" 1. Twitter [foo]       ")
-    @highline.expects(:say).with(" 2. Google [username_1]")
-    @highline.expects(:say).with(" 3. Google [username_2]")
+    @highline.expects(:say).with('============= Keyrack Main Menu =============')
+    @highline.expects(:say).with("1. Twitter [foo]       ")
+    @highline.expects(:say).with("2. Google [username_1]")
+    @highline.expects(:say).with("3. Google [username_2]")
     @highline.expects(:say).with("Mode: copy")
     @highline.expects(:say).with("Commands: [n]ew [e]dit [g]roup [m]ode [q]uit")
 
@@ -448,11 +446,11 @@ class TestConsole < Test::Unit::TestCase
     HighLine::SystemExtensions.expects(:terminal_size).returns([80, 32])
     @twitter.stubs(:usernames).returns(%w{foo})
     seq = sequence('say')
-    @highline.expects(:say).with('========================== Keyrack Main Menu ==========================')
+    @highline.expects(:say).with('======================== Keyrack Main Menu =========================')
     # 1. Twitter [foo]        2. Google [username_1]  3. Google [username_2]
-    @highline.expects(:say).with(" 1. Twitter [foo]       ")
-    @highline.expects(:say).with(" 2. Google [username_1] ")
-    @highline.expects(:say).with(" 3. Google [username_2]")
+    @highline.expects(:say).with("1. Twitter [foo]       ")
+    @highline.expects(:say).with("2. Google [username_1] ")
+    @highline.expects(:say).with("3. Google [username_2]")
     @highline.expects(:say).with("Mode: copy")
     @highline.expects(:say).with("Commands: [n]ew [e]dit [g]roup [m]ode [q]uit")
 

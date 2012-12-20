@@ -13,19 +13,12 @@ module Keyrack
       end
 
       def menu(options)
-        terminal_size = HighLine::SystemExtensions.terminal_size
-
         current_group = options[:group]
         dirty = options[:dirty]
         at_top = options[:at_top]
 
         site_names = current_group.site_names
         subgroup_names = current_group.group_names
-        selection_count = site_names.inject(0) do |sum, name|
-          sum + current_group.site(name).usernames.length
-        end
-        selection_count += subgroup_names.length
-        number_width = selection_count / 10
 
         # Collect the selections
         selections = []
@@ -34,70 +27,39 @@ module Keyrack
         selection_index = 1
         subgroup_names.each do |group_name|
           choices[selection_index.to_s] = {:group => group_name}
-          template = " %#{number_width}d. %%s" % selection_index
-          colorized = template % @highline.color(group_name, :green)
-          uncolorized = template % group_name
-          width = uncolorized.length
-          selections.push({ :width => width, :text => colorized })
+
+          text = @highline.color(group_name, :green)
+          width = group_name.length
+          selections.push({:width => width, :text => text})
+
           max_width = width if width > max_width
           selection_index += 1
         end
+
         site_names.each do |site_name|
           site = current_group.site(site_name)
           site.usernames.each do |username|
             choices[selection_index.to_s] = {:site => site_name, :username => username}
-            text = " %#{number_width}d. %s [%s]" % [selection_index, site_name, username]
+
+            text = "%s [%s]" % [site_name, username]
             width = text.length
-            selections.push({ :width => width, :text => text })
+            selections.push({:width => width, :text => text})
+
             max_width = width if width > max_width
             selection_index += 1
           end
         end
-        multiples = max_width == 0 ? 1 : terminal_size[0] / max_width
-        num_columns =
-          if multiples > 1
-            if (terminal_size[0] - (multiples * max_width)) < (multiples - 1)
-              # If there aren't sufficient spaces, decrease column count
-              multiples - 1
-            else
-              multiples
-            end
-          else
-            1
-          end
-        #puts "Terminal width: %d; Max width: %d; Multiples: %d; Columns: %d" %
-          #[ terminal_size[0], max_width, multiples, num_columns ]
-        menu_width = num_columns * max_width + (num_columns - 1)
 
+        title = {}
         if at_top
-          title = @highline.color("Keyrack Main Menu", :yellow)
-          title_width = 17
+          title[:text] = @highline.color("Keyrack Main Menu", :yellow)
+          title[:width] = 17
         else
-          title = @highline.color(current_group.name, :green)
-          title_width = current_group.name.length
+          title[:text] = @highline.color(current_group.name, :green)
+          title[:width] = current_group.name.length
         end
-        padding_total = menu_width - title_width - 2
-        padding_left = [padding_total / 2, 3].max
-        padding_right = [padding_total - padding_left, 3].max
-        @highline.say(("=" * padding_left) + " #{title} " + ("=" * padding_right))
 
-        selection_index = 0
-        catch(:stop) do
-          loop do
-            num_columns.downto(1) do |i|
-              selection = selections[selection_index]
-              throw(:stop) if selection.nil?
-
-              if i == 1 || selection_index == (selection_count - 1)
-                @highline.say(selection[:text])
-              else
-                spaces = max_width - selection[:width] + 1
-                @highline.say(selection[:text] + (" " * spaces))
-              end
-              selection_index += 1
-            end
-          end
-        end
+        columnize_menu(selections, max_width, title)
 
         @highline.say("Mode: #{@mode}")
         commands = "Commands: [n]ew"
@@ -126,7 +88,7 @@ module Keyrack
         commands << " [m]ode [q]uit"
         @highline.say(commands)
 
-        answer = @highline.ask(" ? ") { |q| q.in = choices.keys }
+        answer = @highline.ask("? ") { |q| q.in = choices.keys }
         result = choices[answer]
         case result
         when Symbol
@@ -213,18 +175,32 @@ module Keyrack
         choices = {'c' => :cancel}
         index = 1
 
-        @highline.say("Choose entry to edit:")
+        title = {
+          :text => @highline.color("Choose entry", :cyan),
+          :width => 12
+        }
+
+        selections = []
+        max_width = 0
         group.site_names.each do |site_name|
           site = group.site(site_name)
           site.usernames.each do |username|
             choices[index.to_s] = {:site => site_name, :username => username}
-            @highline.say("% 2d. %s [%s]" % [index, site_name, username])
+
+            text = "%s [%s]" % [site_name, username]
+            width = text.length
+            selections.push({:text => text, :width => width})
+            max_width = width if width > max_width
+
             index += 1
           end
         end
-        @highline.say(" c. Cancel")
 
-        answer = @highline.ask(" ? ") { |q| q.in = choices.keys }
+        columnize_menu(selections, max_width, title)
+
+        @highline.say("c. Cancel")
+
+        answer = @highline.ask("? ") { |q| q.in = choices.keys }
         result = choices[answer]
         if result == :cancel
           nil
@@ -236,12 +212,12 @@ module Keyrack
       def edit_entry(site_name, username)
         colored_entry = @highline.color("#{site_name} [#{username}]", :cyan)
         @highline.say("Editing entry: #{colored_entry}")
-        @highline.say(" u. Change username")
-        @highline.say(" p. Change password")
-        @highline.say(" d. Delete")
-        @highline.say(" c. Cancel")
+        @highline.say("u. Change username")
+        @highline.say("p. Change password")
+        @highline.say("d. Delete")
+        @highline.say("c. Cancel")
 
-        case @highline.ask(" ? ") { |q| q.in = %w{u p d c} }
+        case @highline.ask("? ") { |q| q.in = %w{u p d c} }
         when "u"
           :change_username
         when "p"
@@ -314,6 +290,63 @@ module Keyrack
           @highline.say("Passwords didn't match. Try again!")
         end
         password
+      end
+
+      def columnize_menu(selections, max_width, title = nil)
+        terminal_size = HighLine::SystemExtensions.terminal_size
+
+        if selections.empty?
+          if title
+            @highline.say("=== #{title[:text]} ===")
+          end
+          return
+        end
+
+        # add in width for numbers
+        number_width = Math.log10(selections.count).floor + 1
+        max_width += number_width + 2
+
+        multiples = max_width == 0 ? 1 : terminal_size[0] / max_width
+        num_columns =
+          if multiples > 1
+            if (terminal_size[0] - (multiples * max_width)) < (multiples - 1)
+              # If there aren't sufficient spaces, decrease column count
+              multiples - 1
+            else
+              multiples
+            end
+          else
+            1
+          end
+        #puts "Terminal width: %d; Max width: %d; Multiples: %d; Columns: %d" %
+          #[ terminal_size[0], max_width, multiples, num_columns ]
+        total_width = num_columns * max_width + (num_columns - 1)
+
+        if title
+          padding_total = total_width - title[:width] - 2
+          padding_left = [padding_total / 2, 3].max
+          padding_right = [padding_total - padding_left, 3].max
+          @highline.say(("=" * padding_left) + " #{title[:text]} " + ("=" * padding_right))
+        end
+
+        selection_index = 0
+        catch(:stop) do
+          loop do
+            num_columns.downto(1) do |i|
+              selection = selections[selection_index]
+              throw(:stop) if selection.nil?
+
+              label = "%#{number_width}d. " % (selection_index + 1)
+              if i == 1 || selection_index == (selections.count - 1)
+                @highline.say(label + selection[:text])
+              else
+                spaces = max_width - (selection[:width] + number_width + 2) + 1
+                @highline.say(label + selection[:text] + (" " * spaces))
+              end
+              selection_index += 1
+            end
+          end
+        end
       end
     end
   end

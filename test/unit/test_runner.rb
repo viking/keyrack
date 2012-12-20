@@ -141,6 +141,24 @@ class TestRunner < Test::Unit::TestCase
     runner = Keyrack::Runner.new(["-d", @keyrack_dir])
   end
 
+  test "canceling edit selection" do
+    setup_config
+
+    @top_group.stubs(:site_names).returns(%w{Foo})
+    foo_site = stub('Foo group', :usernames => %w{bar baz})
+    @top_group.stubs(:site).with('Foo').returns(foo_site)
+
+    seq = SequenceHelper.new('ui sequence')
+    seq << @database.expects(:dirty?).returns(false)
+    seq << @console.expects(:menu).with(@menu_options).returns(:edit)
+    seq << @console.expects(:choose_entry_to_edit).with(@top_group).returns(nil)
+
+    seq << @database.expects(:dirty?).returns(false)
+    seq << @console.expects(:menu).with(@menu_options).returns(:quit)
+
+    runner = Keyrack::Runner.new(["-d", @keyrack_dir])
+  end
+
   test "changing username" do
     setup_config
 

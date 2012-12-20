@@ -83,11 +83,33 @@ module Keyrack
             site.add_login(result[:username], result[:password])
           end
           current_group.add_site(site)  if new_site
-        when :delete
-          result = @ui.delete_entry(current_group)
-          if result
-            site = current_group.site(result[:site])
-            site.remove_login(result[:username])
+        when :edit
+          result = @ui.choose_entry_to_edit(current_group)
+          site_name, username = result.values_at(:site, :username)
+          site = current_group.site(site_name)
+
+          loop do
+            which = @ui.edit_entry(site_name, username)
+            case which
+            when :change_username
+              new_username = @ui.change_username(username)
+              if new_username
+                site.change_username(username, new_username)
+                username = new_username
+              end
+            when :change_password
+              new_password = @ui.get_new_password
+              if new_password
+                site.change_password(username, new_password)
+              end
+            when :delete
+              if @ui.confirm_delete_entry(site_name, username)
+                site.remove_login(username)
+                break
+              end
+            when nil
+              break
+            end
           end
         when :new_group
           group_name = @ui.get_new_group

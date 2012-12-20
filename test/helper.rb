@@ -34,3 +34,13 @@ class Test::Unit::TestCase
     end
   end
 end
+
+class SequenceHelper < Object
+  def initialize(name)
+    @seq = Mocha::Sequence.new(name)
+  end
+
+  def <<(object)
+    object.in_sequence(@seq)
+  end
+end

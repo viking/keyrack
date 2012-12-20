@@ -102,8 +102,8 @@ module Keyrack
         @highline.say("Mode: #{@mode}")
         commands = "Commands: [n]ew"
         if !site_names.empty?
-          choices['d'] = :delete
-          commands << " [d]elete"
+          choices['e'] = :edit
+          commands << " [e]dit"
         end
 
         choices['g'] = :new_group
@@ -171,18 +171,8 @@ module Keyrack
         result = {}
         result[:site]     = @highline.ask("Label: ")
         result[:username] = @highline.ask("Username: ")
-        case @highline.ask("Generate password? [ync] ") { |q| q.in = %w{y n c} }
-        when "y"
-          result[:password] = get_generated_password
-          if result[:password].nil?
-            result[:password] = get_manual_password
-          end
-        when "n"
-          result[:password] = get_manual_password
-        when "c"
-          return nil
-        end
-        result
+        result[:password] = get_new_password
+        result[:password].nil? ? nil : result
       end
 
       def display_first_time_notice
@@ -219,11 +209,11 @@ module Keyrack
         result
       end
 
-      def delete_entry(group)
+      def choose_entry_to_edit(group)
         choices = {'c' => :cancel}
         index = 1
 
-        @highline.say("Choose entry to delete:")
+        @highline.say("Choose entry to edit:")
         group.site_names.each do |site_name|
           site = group.site(site_name)
           site.usernames.each do |username|
@@ -234,15 +224,39 @@ module Keyrack
         end
         @highline.say(" c. Cancel")
 
-        answer = @highline.ask(" ?  ") { |q| q.in = choices.keys }
+        answer = @highline.ask(" ? ") { |q| q.in = choices.keys }
         result = choices[answer]
-        if result != :cancel
-          entry = @highline.color("#{result[:site]} [#{result[:username]}]", :red)
-          if @highline.agree("You're about to delete #{entry}.  Are you sure? [yn] ")
-            return result
-          end
+        if result == :cancel
+          nil
+        else
+          result
         end
-        nil
+      end
+
+      def edit_entry(site_name, username)
+        colored_entry = @highline.color("#{site_name} [#{username}]", :cyan)
+        @highline.say("Editing entry: #{colored_entry}")
+        @highline.say(" u. Change username")
+        @highline.say(" p. Change password")
+        @highline.say(" d. Delete")
+        @highline.say(" c. Cancel")
+
+        case @highline.ask(" ? ") { |q| q.in = %w{u p d c} }
+        when "u"
+          :change_username
+        when "p"
+          :change_password
+        when "d"
+          :delete
+        when "c"
+          nil
+        end
+      end
+
+      def change_username(old_username)
+        colored_old_username = @highline.color(old_username, :cyan)
+        @highline.say("Current username: #{colored_old_username}")
+        @highline.ask("New username (blank to cancel): ") { |q| q.validate = /\S/ }
       end
 
       def confirm_overwrite_entry(site_name, username)
@@ -250,8 +264,27 @@ module Keyrack
         @highline.agree("There's already an entry for: #{entry_name}. Do you want to overwrite it? [yn] ")
       end
 
+      def confirm_delete_entry(site_name, username)
+        entry = @highline.color("#{site_name} [#{username}]", :red)
+        @highline.agree("You're about to delete #{entry}. Are you sure? [yn] ")
+      end
+
       def display_invalid_password_notice
         @highline.say("Invalid password.")
+      end
+
+      def get_new_password
+        result = nil
+        case @highline.ask("Generate password? [ync] ") { |q| q.in = %w{y n c} }
+        when "y"
+          result = get_generated_password
+          if result.nil?
+            result = get_manual_password
+          end
+        when "n"
+          result = get_manual_password
+        end
+        result
       end
 
       def get_generated_password

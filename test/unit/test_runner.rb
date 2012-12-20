@@ -1,15 +1,5 @@
 require 'helper'
 
-class SequenceHelper < Object
-  def initialize(name)
-    @seq = Mocha::Sequence.new(name)
-  end
-
-  def <<(object)
-    object.in_sequence(@seq)
-  end
-end
-
 class TestRunner < Test::Unit::TestCase
   def setup
     @console = stub('console', {
@@ -151,21 +141,130 @@ class TestRunner < Test::Unit::TestCase
     runner = Keyrack::Runner.new(["-d", @keyrack_dir])
   end
 
+  test "changing username" do
+    setup_config
+
+    @top_group.stubs(:site_names).returns(%w{Foo})
+    foo_site = stub('Foo group', :usernames => %w{bar baz})
+    @top_group.stubs(:site).with('Foo').returns(foo_site)
+
+    seq = SequenceHelper.new('ui sequence')
+    seq << @database.expects(:dirty?).returns(false)
+    seq << @console.expects(:menu).with(@menu_options).returns(:edit)
+    seq << @console.expects(:choose_entry_to_edit).with(@top_group).returns({:site => 'Foo', :username => 'bar'})
+    seq << @console.expects(:edit_entry).with('Foo', 'bar').returns(:change_username)
+    seq << @console.expects(:change_username).with('bar').returns('junk')
+    seq << foo_site.expects(:change_username).with('bar', 'junk')
+    seq << @console.expects(:edit_entry).with('Foo', 'junk').returns(nil)
+
+    seq << @database.expects(:dirty?).returns(true)
+    seq << @console.expects(:menu).with(@menu_options.merge(:dirty => true)).returns(:quit)
+
+    runner = Keyrack::Runner.new(["-d", @keyrack_dir])
+  end
+
+  test "cancel changing username" do
+    setup_config
+
+    @top_group.stubs(:site_names).returns(%w{Foo})
+    foo_site = stub('Foo group', :usernames => %w{bar baz})
+    @top_group.stubs(:site).with('Foo').returns(foo_site)
+
+    seq = SequenceHelper.new('ui sequence')
+    seq << @database.expects(:dirty?).returns(false)
+    seq << @console.expects(:menu).with(@menu_options).returns(:edit)
+    seq << @console.expects(:choose_entry_to_edit).with(@top_group).returns({:site => 'Foo', :username => 'bar'})
+    seq << @console.expects(:edit_entry).with('Foo', 'bar').returns(:change_username)
+    seq << @console.expects(:change_username).with('bar').returns(nil)
+    seq << @console.expects(:edit_entry).with('Foo', 'bar').returns(nil)
+
+    seq << @database.expects(:dirty?).returns(false)
+    seq << @console.expects(:menu).with(@menu_options).returns(:quit)
+
+    runner = Keyrack::Runner.new(["-d", @keyrack_dir])
+  end
+
+  test "changing password" do
+    setup_config
+
+    @top_group.stubs(:site_names).returns(%w{Foo})
+    foo_site = stub('Foo group', :usernames => %w{bar baz})
+    @top_group.stubs(:site).with('Foo').returns(foo_site)
+
+    seq = SequenceHelper.new('ui sequence')
+    seq << @database.expects(:dirty?).returns(false)
+    seq << @console.expects(:menu).with(@menu_options).returns(:edit)
+    seq << @console.expects(:choose_entry_to_edit).with(@top_group).returns({:site => 'Foo', :username => 'bar'})
+    seq << @console.expects(:edit_entry).with('Foo', 'bar').returns(:change_password)
+    seq << @console.expects(:get_new_password).returns('secret')
+    seq << foo_site.expects(:change_password).with('bar', 'secret')
+    seq << @console.expects(:edit_entry).with('Foo', 'bar').returns(nil)
+
+    seq << @database.expects(:dirty?).returns(true)
+    seq << @console.expects(:menu).with(@menu_options.merge(:dirty => true)).returns(:quit)
+
+    runner = Keyrack::Runner.new(["-d", @keyrack_dir])
+  end
+
+  test "cancel changing password" do
+    setup_config
+
+    @top_group.stubs(:site_names).returns(%w{Foo})
+    foo_site = stub('Foo group', :usernames => %w{bar baz})
+    @top_group.stubs(:site).with('Foo').returns(foo_site)
+
+    seq = SequenceHelper.new('ui sequence')
+    seq << @database.expects(:dirty?).returns(false)
+    seq << @console.expects(:menu).with(@menu_options).returns(:edit)
+    seq << @console.expects(:choose_entry_to_edit).with(@top_group).returns({:site => 'Foo', :username => 'bar'})
+    seq << @console.expects(:edit_entry).with('Foo', 'bar').returns(:change_password)
+    seq << @console.expects(:get_new_password).returns(nil)
+    seq << @console.expects(:edit_entry).with('Foo', 'bar').returns(nil)
+
+    seq << @database.expects(:dirty?).returns(false)
+    seq << @console.expects(:menu).with(@menu_options).returns(:quit)
+
+    runner = Keyrack::Runner.new(["-d", @keyrack_dir])
+  end
+
   test "delete entry" do
     setup_config
 
     @top_group.stubs(:site_names).returns(%w{Foo})
-    foo_site = stub('Foo group', :usernames => %w{bar})
+    foo_site = stub('Foo group', :usernames => %w{bar baz})
+    @top_group.stubs(:site).with('Foo').returns(foo_site)
 
-    seq = SequenceHelper.new("ui sequence")
+    seq = SequenceHelper.new('ui sequence')
     seq << @database.expects(:dirty?).returns(false)
-    seq << @console.expects(:menu).with(@menu_options).returns(:delete)
-    seq << @console.expects(:delete_entry).with(@top_group).returns({:site => "Foo", :username => "bar"})
-    seq << @top_group.expects(:site).with('Foo').returns(foo_site)
+    seq << @console.expects(:menu).with(@menu_options).returns(:edit)
+    seq << @console.expects(:choose_entry_to_edit).with(@top_group).returns({:site => 'Foo', :username => 'bar'})
+    seq << @console.expects(:edit_entry).with('Foo', 'bar').returns(:delete)
+    seq << @console.expects(:confirm_delete_entry).with('Foo', 'bar').returns(true)
     seq << foo_site.expects(:remove_login).with('bar')
 
     seq << @database.expects(:dirty?).returns(true)
     seq << @console.expects(:menu).with(@menu_options.merge(:dirty => true)).returns(:quit)
+
+    runner = Keyrack::Runner.new(["-d", @keyrack_dir])
+  end
+
+  test "cancel delete entry" do
+    setup_config
+
+    @top_group.stubs(:site_names).returns(%w{Foo})
+    foo_site = stub('Foo group', :usernames => %w{bar baz})
+    @top_group.stubs(:site).with('Foo').returns(foo_site)
+
+    seq = SequenceHelper.new('ui sequence')
+    seq << @database.expects(:dirty?).returns(false)
+    seq << @console.expects(:menu).with(@menu_options).returns(:edit)
+    seq << @console.expects(:choose_entry_to_edit).with(@top_group).returns({:site => 'Foo', :username => 'bar'})
+    seq << @console.expects(:edit_entry).with('Foo', 'bar').returns(:delete)
+    seq << @console.expects(:confirm_delete_entry).with('Foo', 'bar').returns(false)
+    seq << @console.expects(:edit_entry).with('Foo', 'bar').returns(nil)
+
+    seq << @database.expects(:dirty?).returns(false)
+    seq << @console.expects(:menu).with(@menu_options).returns(:quit)
 
     runner = Keyrack::Runner.new(["-d", @keyrack_dir])
   end

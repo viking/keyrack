@@ -54,7 +54,12 @@ module Keyrack
         str = Scrypty.decrypt(data, @password,
           *@decrypt_options.values_at(:maxmem, :maxmemfrac, :maxtime))
         hash = YAML.load(str)
-        hash['groups']['top'] = Group.new(hash['groups']['top'])
+
+        top = Group.new
+        add_group_hooks_for(top)
+        top.load(hash['groups']['top'])
+        hash['groups']['top'] = top
+
         hash
       else
         {'groups' => {'top' => Group.new('top')}, 'version' => VERSION}

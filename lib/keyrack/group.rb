@@ -1,6 +1,6 @@
 module Keyrack
   class Group < Hash
-    def initialize(arg)
+    def initialize(arg = nil)
       @after_site_added = []
       @after_site_removed = []
       @after_login_added = []
@@ -16,70 +16,81 @@ module Keyrack
         self['sites'] = {}
         self['groups'] = {}
       when Hash
-        if !arg.has_key?('name')
-          raise ArgumentError, "hash is missing the 'name' key"
-        end
-        if !arg['name'].is_a?(String)
-          raise ArgumentError, "name is not a String"
-        end
-        self['name'] = arg['name']
+        load(arg)
+      when nil
+        @uninitialized = true
+      end
+    end
 
-        if !arg.has_key?('sites')
-          raise ArgumentError, "hash is missing the 'sites' key"
-        end
-        if !arg['sites'].is_a?(Hash)
-          raise ArgumentError, "sites is not a Hash"
-        end
+    def load(hash)
+      @loading = true
 
-        if !arg.has_key?('groups')
-          raise ArgumentError, "hash is missing the 'groups' key"
+      if !hash.has_key?('name')
+        raise ArgumentError, "hash is missing the 'name' key"
+      end
+      if !hash['name'].is_a?(String)
+        raise ArgumentError, "name is not a String"
+      end
+      self['name'] = hash['name']
+
+      if !hash.has_key?('sites')
+        raise ArgumentError, "hash is missing the 'sites' key"
+      end
+      if !hash['sites'].is_a?(Hash)
+        raise ArgumentError, "sites is not a Hash"
+      end
+
+      if !hash.has_key?('groups')
+        raise ArgumentError, "hash is missing the 'groups' key"
+      end
+      if !hash['groups'].is_a?(Hash)
+        raise ArgumentError, "groups is not a Hash"
+      end
+
+      self['sites'] = {}
+      hash['sites'].each_pair do |site_name, site_hash|
+        if !site_name.is_a?(String)
+          raise ArgumentError, "site key is not a String"
         end
-        if !arg['groups'].is_a?(Hash)
-          raise ArgumentError, "groups is not a Hash"
-        end
-
-        self['sites'] = {}
-        arg['sites'].each_pair do |site_name, site_hash|
-          if !site_name.is_a?(String)
-            raise ArgumentError, "site key is not a String"
-          end
-          if !site_hash.is_a?(Hash)
-            raise ArgumentError, "site value for #{site_name.inspect} is not a Hash"
-          end
-
-          begin
-            site = Site.new(site_hash)
-            add_site_without_callbacks(site)
-          rescue SiteError => e
-            raise ArgumentError, "site #{site_name.inspect} is not valid: #{e.message}"
-          end
-
-          if site.name != site_name
-            raise ArgumentError, "site name mismatch: #{site_name.inspect} != #{site.name.inspect}"
-          end
+        if !site_hash.is_a?(Hash)
+          raise ArgumentError, "site value for #{site_name.inspect} is not a Hash"
         end
 
-        self['groups'] = {}
-        arg['groups'].each_pair do |group_name, group_hash|
-          if !group_name.is_a?(String)
-            raise ArgumentError, "group key is not a String"
-          end
-          if !group_hash.is_a?(Hash)
-            raise ArgumentError, "group value for #{group_name.inspect} is not a Hash"
-          end
+        begin
+          site = Site.new(site_hash)
+          add_site(site)
+        rescue SiteError => e
+          raise ArgumentError, "site #{site_name.inspect} is not valid: #{e.message}"
+        end
 
-          begin
-            group = Group.new(group_hash)
-            add_group_without_callbacks(group)
-          rescue ArgumentError => e
-            raise ArgumentError, "group #{group_name.inspect} is not valid: #{e.message}"
-          end
-
-          if group.name != group_name
-            raise ArgumentError, "group name mismatch: #{group_name.inspect} != #{group.name.inspect}"
-          end
+        if site.name != site_name
+          raise ArgumentError, "site name mismatch: #{site_name.inspect} != #{site.name.inspect}"
         end
       end
+
+      self['groups'] = {}
+      hash['groups'].each_pair do |group_name, group_hash|
+        if !group_name.is_a?(String)
+          raise ArgumentError, "group key is not a String"
+        end
+        if !group_hash.is_a?(Hash)
+          raise ArgumentError, "group value for #{group_name.inspect} is not a Hash"
+        end
+
+        begin
+          group = Group.new(group_hash)
+          add_group(group)
+        rescue ArgumentError => e
+          raise ArgumentError, "group #{group_name.inspect} is not valid: #{e.message}"
+        end
+
+        if group.name != group_name
+          raise ArgumentError, "group name mismatch: #{group_name.inspect} != #{group.name.inspect}"
+        end
+      end
+
+      @loading = false
+      @uninitialized = false
     end
 
     def name
@@ -95,6 +106,7 @@ module Keyrack
     end
 
     def add_site(site)
+      raise "add_site is not allowed until Group is initialized" if @uninitialized && !@loading
       add_site_without_callbacks(site)
 
       @after_site_added.each do |block|
@@ -111,6 +123,7 @@ module Keyrack
     end
 
     def remove_site(site_name)
+      raise "remove_site is not allowed until Group is initialized" if @uninitialized && !@loading
       if !sites.has_key?(site_name)
         raise GroupError, "site doesn't exist"
       end
@@ -122,6 +135,7 @@ module Keyrack
     end
 
     def add_group(group)
+      raise "add_group is not allowed until Group is initialized" if @uninitialized && !@loading
       add_group_without_callbacks(group)
 
       @after_group_added.each do |block|
@@ -138,6 +152,7 @@ module Keyrack
     end
 
     def remove_group(group_name)
+      raise "remove_group is not allowed until Group is initialized" if @uninitialized && !@loading
       if !groups.has_key?(group_name)
         raise GroupError, "group doesn't exist"
       end

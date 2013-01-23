@@ -16,6 +16,14 @@ class TestGroup < Test::Unit::TestCase
     assert_equal({}, group.groups)
   end
 
+  test "initializing with no arguments makes read-only (until loaded)" do
+    group = Keyrack::Group.new
+    assert_raises(RuntimeError) { group.add_site(new_site('Foo')) }
+    assert_raises(RuntimeError) { group.remove_site('Foo') }
+    assert_raises(RuntimeError) { group.add_group(new_group('Foo')) }
+    assert_raises(RuntimeError) { group.remove_group('Foo') }
+  end
+
   test "add_site" do
     group = new_group("Starships")
     site = new_site("Enterprise")
@@ -117,6 +125,12 @@ class TestGroup < Test::Unit::TestCase
       }
     }
     group = new_group(hash)
+    assert_equal "Starships", group.name
+    assert_equal hash['sites'], group.sites
+    assert_equal hash['groups'], group.groups
+
+    group = Keyrack::Group.new
+    group.load(hash)
     assert_equal "Starships", group.name
     assert_equal hash['sites'], group.sites
     assert_equal hash['groups'], group.groups

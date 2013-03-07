@@ -9,7 +9,7 @@ module Keyrack
       end
 
       def get_password
-        @highline.ask("Keyrack password: ") { |q| q.echo = false }
+        @highline.ask("Keyrack password: ") { |q| q.echo = false }.to_s
       end
 
       def menu(options)
@@ -88,7 +88,7 @@ module Keyrack
         commands << " [m]ode [q]uit"
         @highline.say(commands)
 
-        answer = @highline.ask("? ") { |q| q.in = choices.keys }
+        answer = @highline.ask("? ") { |q| q.in = choices.keys }.to_s
         result = choices[answer]
         case result
         when Symbol
@@ -126,13 +126,13 @@ module Keyrack
       end
 
       def get_new_group(options = {})
-        @highline.ask("Group: ") { |q| q.validate = /^\w[\w\s]*$/ }
+        @highline.ask("Group: ") { |q| q.validate = /^\w[\w\s]*$/ }.to_s
       end
 
       def get_new_entry
         result = {}
-        result[:site]     = @highline.ask("Label: ")
-        result[:username] = @highline.ask("Username: ")
+        result[:site]     = @highline.ask("Label: ").to_s
+        result[:username] = @highline.ask("Username: ").to_s
         result[:password] = get_new_password
         result[:password].nil? ? nil : result
       end
@@ -144,8 +144,8 @@ module Keyrack
       def password_setup
         password = confirmation = nil
         loop do
-          password = @highline.ask("New passphrase: ") { |q| q.echo = false }
-          confirmation = @highline.ask("Confirm passphrase: ") { |q| q.echo = false }
+          password = @highline.ask("New passphrase: ") { |q| q.echo = false }.to_s
+          confirmation = @highline.ask("Confirm passphrase: ") { |q| q.echo = false }.to_s
           break if password == confirmation
           @highline.say("Passphrases didn't match.")
         end
@@ -163,9 +163,9 @@ module Keyrack
         when 'filesystem'
           result['path'] = 'database'
         when 'ssh'
-          result['host'] = @highline.ask("Host: ")
-          result['user'] = @highline.ask("User: ")
-          result['path'] = @highline.ask("Remote path: ")
+          result['host'] = @highline.ask("Host: ").to_s
+          result['user'] = @highline.ask("User: ").to_s
+          result['path'] = @highline.ask("Remote path: ").to_s
         end
 
         result
@@ -200,7 +200,7 @@ module Keyrack
 
         @highline.say("c. Cancel")
 
-        answer = @highline.ask("? ") { |q| q.in = choices.keys }
+        answer = @highline.ask("? ") { |q| q.in = choices.keys }.to_s
         result = choices[answer]
         if result == :cancel
           nil
@@ -217,7 +217,7 @@ module Keyrack
         @highline.say("d. Delete")
         @highline.say("c. Cancel")
 
-        case @highline.ask("? ") { |q| q.in = %w{u p d c} }
+        case @highline.ask("? ") { |q| q.in = %w{u p d c} }.to_s
         when "u"
           :change_username
         when "p"
@@ -232,7 +232,7 @@ module Keyrack
       def change_username(old_username)
         colored_old_username = @highline.color(old_username, :cyan)
         @highline.say("Current username: #{colored_old_username}")
-        @highline.ask("New username (blank to cancel): ") { |q| q.validate = /\S/ }
+        @highline.ask("New username (blank to cancel): ") { |q| q.validate = /\S/ }.to_s
       end
 
       def confirm_overwrite_entry(site_name, username)
@@ -251,7 +251,7 @@ module Keyrack
 
       def get_new_password
         result = nil
-        case @highline.ask("Generate password? [ync] ") { |q| q.in = %w{y n c} }
+        case @highline.ask("Generate password? [ync] ") { |q| q.in = %w{y n c} }.to_s
         when "y"
           result = get_generated_password
           if result.nil?
@@ -268,7 +268,7 @@ module Keyrack
         loop do
           password = Utils.generate_password
           colored_password = @highline.color(password, :cyan)
-          case @highline.ask("Generated #{colored_password}.  Sound good? [ync] ") { |q| q.in = %w{y n c} }
+          case @highline.ask("Generated #{colored_password}.  Sound good? [ync] ") { |q| q.in = %w{y n c} }.to_s
           when "y"
             break
           when "c"
@@ -282,8 +282,8 @@ module Keyrack
       def get_manual_password
         password = nil
         loop do
-          password = @highline.ask("Password: ") { |q| q.echo = false }
-          confirmation = @highline.ask("Password (again): ") { |q| q.echo = false }
+          password = @highline.ask("Password: ") { |q| q.echo = false }.to_s
+          confirmation = @highline.ask("Password (again): ") { |q| q.echo = false }.to_s
           if password == confirmation
             break
           end

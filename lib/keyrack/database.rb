@@ -1,7 +1,7 @@
 module Keyrack
   class Database
     DEFAULT_ENCRYPT_OPTIONS = { :maxmem => 0, :maxmemfrac => 0.125, :maxtime => 5.0 }
-    DEFAULT_DECRYPT_OPTIONS = { :maxmem => 0, :maxmemfrac => 0.125, :maxtime => 10.0 }
+    DEFAULT_DECRYPT_OPTIONS = { :maxmem => 0, :maxmemfrac => 0.250, :maxtime => 10.0 }
     VERSION = 3
 
     def initialize(password, store, encrypt_options = {}, decrypt_options = {})

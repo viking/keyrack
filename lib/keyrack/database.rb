@@ -2,7 +2,7 @@ module Keyrack
   class Database
     DEFAULT_ENCRYPT_OPTIONS = { :maxmem => 0, :maxmemfrac => 0.125, :maxtime => 5.0 }
     DEFAULT_DECRYPT_OPTIONS = { :maxmem => 0, :maxmemfrac => 0.250, :maxtime => 10.0 }
-    VERSION = 3
+    VERSION = 4
 
     def initialize(password, store, encrypt_options = {}, decrypt_options = {})
       @encrypt_options = DEFAULT_ENCRYPT_OPTIONS.merge(encrypt_options)
@@ -53,7 +53,7 @@ module Keyrack
       if data
         str = Scrypty.decrypt(data, @password,
           *@decrypt_options.values_at(:maxmem, :maxmemfrac, :maxtime))
-        hash = YAML.load(str)
+        hash = Migrator.run(YAML.load(str))
 
         top = Group.new
         add_group_hooks_for(top)

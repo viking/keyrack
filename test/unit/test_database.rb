@@ -1,6 +1,23 @@
 require 'helper'
 
 class TestDatabase < Test::Unit::TestCase
+  class TestReload < self
+    def setup
+      super
+      @database = Keyrack::Database.new(@key, @store, @encrypt_options, @decrypt_options)
+    end
+  end
+
+  def self.database_test(test_description, reload, &block)
+    if reload
+      TestReload.class_eval do
+        test(test_description, &block)
+      end
+    else
+      test(test_description, &block)
+    end
+  end
+
   def setup
     @path = get_tmpname
     @store = Keyrack::Store['filesystem'].new('path' => @path)
@@ -16,20 +33,6 @@ class TestDatabase < Test::Unit::TestCase
 
   def decrypt(data, key = @key, options = @decrypt_options)
     Scrypty.decrypt(data, key, *options.values_at(:maxmem, :maxmemfrac, :maxtime))
-  end
-
-  def self.database_test(test_description, reload, &block)
-    if reload
-      method_name = "reload test: #{test_description}"
-      define_method(method_name, &block)
-      description(test_description, method_name)
-      attribute(:test, true, {}, method_name)
-      if block.respond_to?(:source_location)
-        attribute(:source_location, block.source_location, {}, method_name)
-      end
-    else
-      test(test_description, &block)
-    end
   end
 
   test "encrypting database" do
@@ -53,6 +56,13 @@ class TestDatabase < Test::Unit::TestCase
       'version' => Keyrack::Database::VERSION
     }
     assert_equal(expected, data)
+  end
+
+  test "auto-migrating database from version 3" do
+    store = Keyrack::Store['filesystem'].new('path' => fixture_path('database-3.dat'))
+    assert_nothing_raised do
+      database = Keyrack::Database.new('foobar', store)
+    end
   end
 
   [true, false].each do |reload|

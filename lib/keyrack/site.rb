@@ -1,101 +1,63 @@
 module Keyrack
   class Site < Hash
-    def initialize(arg)
-      case arg
-      when String
-        self['name'] = arg
-        self['logins'] = {}
-      when Hash
-        if !arg.has_key?('name')
+    def initialize(*args)
+      if args[0].is_a?(Hash)
+        hash = args[0]
+        if !hash.has_key?('name')
           raise ArgumentError, "hash is missing the 'name' key"
         end
-        if !arg['name'].is_a?(String)
+        if !hash['name'].is_a?(String)
           raise ArgumentError, "name is not a String"
         end
-        if !arg.has_key?('logins')
-          raise ArgumentError, "hash is missing the 'logins' key"
+        if !hash.has_key?('username')
+          raise ArgumentError, "hash is missing the 'username' key"
         end
-        if !arg['logins'].is_a?(Hash)
-          raise ArgumentError, "logins is not a Hash"
+        if !hash['username'].is_a?(String)
+          raise ArgumentError, "name is not a String"
         end
-        if arg['logins'].any? { |(k, v)| !k.is_a?(String) || !v.is_a?(String) }
-          raise ArgumentError, "logins hash is not made up of strings"
+        if !hash.has_key?('password')
+          raise ArgumentError, "hash is missing the 'password' key"
         end
-        self.update(arg)
+        if !hash['password'].is_a?(String)
+          raise ArgumentError, "name is not a String"
+        end
+        self.update(hash)
+      else
+        self['name'] = args[0]
+        self['username'] = args[1]
+        self['password'] = args[2]
       end
 
-      @after_login_added = []
       @after_username_changed = []
       @after_password_changed = []
-      @after_login_removed = []
     end
 
     def name
       self['name']
     end
 
-    def logins
-      self['logins']
+    def username
+      self['username']
     end
 
-    def usernames
-      logins.keys
-    end
-
-    def add_login(username, password)
-      if logins.has_key?(username)
-        raise SiteError, "username already exists"
-      end
-      logins[username] = password
-
-      @after_login_added.each do |block|
-        block.call(self, username, password)
-      end
-    end
-
-    def password_for(username)
-      if !logins.has_key?(username)
-        raise SiteError, "username doesn't exist"
-      end
-      logins[username]
-    end
-
-    def change_username(old_username, new_username)
-      if !logins.has_key?(old_username)
-        raise SiteError, "username doesn't exist"
-      end
-      logins[new_username] = logins.delete(old_username)
+    def username=(username)
+      self['username'] = username
 
       @after_username_changed.each do |block|
-        block.call(self, old_username, new_username)
+        block.call(self)
       end
     end
 
-    def change_password(username, new_password)
-      if !logins.has_key?(username)
-        raise SiteError, "username doesn't exist"
-      end
-      old_password = logins[username]
-      logins[username] = new_password
+    def password
+      self['password']
+    end
+
+    def password=(password)
+      self['password'] = password
 
       @after_password_changed.each do |block|
-        block.call(self, username, old_password, new_password)
+        block.call(self)
       end
-    end
-
-    def remove_login(username)
-      if !logins.has_key?(username)
-        raise SiteError, "username doesn't exist"
-      end
-      password = logins.delete(username)
-
-      @after_login_removed.each do |block|
-        block.call(self, username, password)
-      end
-    end
-
-    def after_login_added(&block)
-      @after_login_added << block
     end
 
     def after_username_changed(&block)
@@ -106,12 +68,16 @@ module Keyrack
       @after_password_changed << block
     end
 
-    def after_login_removed(&block)
-      @after_login_removed << block
-    end
-
     def encode_with(coder)
       coder.represent_map(nil, self)
+    end
+
+    def ==(other)
+      if other.instance_of?(Site)
+        other.name == name && other.username == username
+      else
+        super
+      end
     end
   end
 end

@@ -17,15 +17,12 @@ module Keyrack
         dirty = options[:dirty]
         at_top = options[:at_top]
 
-        site_names = current_group.site_names
-        subgroup_names = current_group.group_names
-
         # Collect the selections
         selections = []
         max_width = 0
         choices = {'n' => :new, 'q' => :quit, 'm' => :mode}
         selection_index = 1
-        subgroup_names.each do |group_name|
+        current_group.group_names.each do |group_name|
           choices[selection_index.to_s] = {:group => group_name}
 
           text = @highline.color(group_name, :green)
@@ -36,18 +33,15 @@ module Keyrack
           selection_index += 1
         end
 
-        site_names.each do |site_name|
-          site = current_group.site(site_name)
-          site.usernames.each do |username|
-            choices[selection_index.to_s] = {:site => site_name, :username => username}
+        current_group.sites.each do |site|
+          choices[selection_index.to_s] = {:site => site}
 
-            text = "%s [%s]" % [site_name, username]
-            width = text.length
-            selections.push({:width => width, :text => text})
+          text = "%s [%s]" % [site.name, site.username]
+          width = text.length
+          selections.push({:width => width, :text => text})
 
-            max_width = width if width > max_width
-            selection_index += 1
-          end
+          max_width = width if width > max_width
+          selection_index += 1
         end
 
         title = {}
@@ -63,7 +57,7 @@ module Keyrack
 
         @highline.say("Mode: #{@mode}")
         commands = "Commands: [n]ew"
-        if !site_names.empty?
+        if !current_group.sites.empty?
           choices['e'] = :edit
           commands << " [e]dit"
         end
@@ -104,8 +98,7 @@ module Keyrack
           if result.has_key?(:group)
             {:group => current_group.group(result[:group])}
           else
-            password = current_group.site(result[:site]).
-              password_for(result[:username])
+            password = result[:site].password
 
             if @mode == :copy
               Clipboard.copy(password)
@@ -182,18 +175,15 @@ module Keyrack
 
         selections = []
         max_width = 0
-        group.site_names.each do |site_name|
-          site = group.site(site_name)
-          site.usernames.each do |username|
-            choices[index.to_s] = {:site => site_name, :username => username}
+        group.sites.each_with_index do |site|
+          choices[index.to_s] = {:site => site}
 
-            text = "%s [%s]" % [site_name, username]
-            width = text.length
-            selections.push({:text => text, :width => width})
-            max_width = width if width > max_width
+          text = "%s [%s]" % [site.name, site.username]
+          width = text.length
+          selections.push({:text => text, :width => width})
+          max_width = width if width > max_width
 
-            index += 1
-          end
+          index += 1
         end
 
         columnize_menu(selections, max_width, title)
@@ -209,8 +199,8 @@ module Keyrack
         end
       end
 
-      def edit_entry(site_name, username)
-        colored_entry = @highline.color("#{site_name} [#{username}]", :cyan)
+      def edit_entry(site)
+        colored_entry = @highline.color("#{site.name} [#{site.username}]", :cyan)
         @highline.say("Editing entry: #{colored_entry}")
         @highline.say("u. Change username")
         @highline.say("p. Change password")
@@ -235,14 +225,14 @@ module Keyrack
         @highline.ask("New username (blank to cancel): ") { |q| q.validate = /\S/ }.to_s
       end
 
-      def confirm_overwrite_entry(site_name, username)
-        entry_name = @highline.color("#{site_name} [#{username}]", :cyan)
+      def confirm_overwrite_entry(site)
+        entry_name = @highline.color("#{site.name} [#{site.username}]", :cyan)
         @highline.agree("There's already an entry for: #{entry_name}. Do you want to overwrite it? [yn] ")
       end
 
-      def confirm_delete_entry(site_name, username)
-        entry = @highline.color("#{site_name} [#{username}]", :red)
-        @highline.agree("You're about to delete #{entry}. Are you sure? [yn] ")
+      def confirm_delete_entry(site)
+        entry_name = @highline.color("#{site.name} [#{site.username}]", :red)
+        @highline.agree("You're about to delete #{entry_name}. Are you sure? [yn] ")
       end
 
       def display_invalid_password_notice

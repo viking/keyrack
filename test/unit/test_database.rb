@@ -9,9 +9,8 @@ class TestDatabase < Test::Unit::TestCase
     @decrypt_options = { :maxmem => 0, :maxmemfrac => 0.10, :maxtime => 1.0 }
     @key = "secret"
     @database = Keyrack::Database.new(@key, @store, @encrypt_options, @decrypt_options)
-    twitter = Keyrack::Site.new('Twitter')
-    twitter.add_login('dude', 'p4ssword')
-    @database.top_group.add_site(twitter)
+    @twitter = Keyrack::Site.new('Twitter', 'dude', 'p4ssword')
+    @database.top_group.add_site(@twitter)
     assert @database.save(@key)
   end
 
@@ -41,12 +40,13 @@ class TestDatabase < Test::Unit::TestCase
       'groups' => {
         'top' => {
           'name' => 'top',
-          'sites' => {
-            'Twitter' => {
+          'sites' => [
+            {
               'name' => 'Twitter',
-              'logins' => {'dude' => 'p4ssword'}
+              'username' => 'dude',
+              'password' => 'p4ssword'
             }
-          },
+          ],
           'groups' => {}
         }
       },
@@ -58,42 +58,28 @@ class TestDatabase < Test::Unit::TestCase
   [true, false].each do |reload|
     database_test "database is dirty after adding site to top group", reload do
       assert !@database.dirty?
-      site = Keyrack::Site.new('Foo')
+      site = Keyrack::Site.new('Foo', 'foo', 'bar')
       @database.top_group.add_site(site)
       assert @database.dirty?
     end
 
     database_test "database is dirty after removing site from top group", reload do
       assert !@database.dirty?
-      @database.top_group.remove_site('Twitter')
-      assert @database.dirty?
-    end
-
-    database_test "database is dirty after adding login to site", reload do
-      assert !@database.dirty?
-      twitter = @database.top_group.site('Twitter')
-      twitter.add_login('foo', 'bar')
-      assert @database.dirty?
-    end
-
-    database_test "database is dirty after removing login from site", reload do
-      assert !@database.dirty?
-      twitter = @database.top_group.site('Twitter')
-      twitter.remove_login('dude')
+      @database.top_group.remove_site(@twitter)
       assert @database.dirty?
     end
 
     database_test "database is dirty after changing username", reload do
       assert !@database.dirty?
-      twitter = @database.top_group.site('Twitter')
-      twitter.change_username('dude', 'bro')
+      twitter = @database.top_group.site(0)
+      twitter.username = 'bro'
       assert @database.dirty?
     end
 
     database_test "database is dirty after changing password", reload do
       assert !@database.dirty?
-      twitter = @database.top_group.site('Twitter')
-      twitter.change_password('dude', 'secret')
+      twitter = @database.top_group.site(0)
+      twitter.password = 'secret'
       assert @database.dirty?
     end
 
@@ -121,7 +107,7 @@ class TestDatabase < Test::Unit::TestCase
       assert @database.save(@key)
 
       assert !@database.dirty?
-      site = Keyrack::Site.new('Bar')
+      site = Keyrack::Site.new('Bar', 'bar', 'baz')
       group.add_site(site)
       assert @database.dirty?
     end
@@ -133,12 +119,12 @@ class TestDatabase < Test::Unit::TestCase
       assert @database.save(@key)
 
       assert !@database.dirty?
-      site = Keyrack::Site.new('Bar')
+      site = Keyrack::Site.new('Bar', 'bar', 'baz')
       group.add_site(site)
       assert @database.save(@key)
 
       assert !@database.dirty?
-      group.remove_site('Bar')
+      group.remove_site(site)
       assert @database.dirty?
     end
 
@@ -157,18 +143,18 @@ class TestDatabase < Test::Unit::TestCase
     database_test "large number of entries", reload do
       site_name = "abcdefg"; username = "1234567"; password = "zyxwvut" * 2
       500.times do |i|
-        site = Keyrack::Site.new(site_name)
-        site.add_login(username, password)
+        site = Keyrack::Site.new(site_name, username, password)
         @database.top_group.add_site(site)
-        site_name.next!; username.next!; password.next!
+        site_name = site_name.next
+        username = username.next
+        password = password.next
       end
       assert @database.save(@key)
       assert_equal 501, @database.top_group.sites.length
     end
 
     database_test "saving requires same password as creation", reload do
-      site = Keyrack::Site.new("Foo")
-      site.add_login("bar", "baz")
+      site = Keyrack::Site.new("Foo", 'foo', 'bar')
       @database.top_group.add_site(site)
 
       assert !@database.save("bogus")
@@ -177,8 +163,7 @@ class TestDatabase < Test::Unit::TestCase
     database_test "changing database password successfully", reload do
       assert @database.change_password(@key, "new-secret")
 
-      site = Keyrack::Site.new("Foo")
-      site.add_login("bar", "baz")
+      site = Keyrack::Site.new("Foo", 'bar', 'baz')
       @database.top_group.add_site(site)
 
       assert @database.save("new-secret")
@@ -187,8 +172,7 @@ class TestDatabase < Test::Unit::TestCase
     database_test "attempting to change database password with wrong existing password", reload do
       assert !@database.change_password("bogus", "new-secret")
 
-      site = Keyrack::Site.new("Foo")
-      site.add_login("bar", "baz")
+      site = Keyrack::Site.new("Foo", 'foo', 'bar')
       @database.top_group.add_site(site)
 
       assert !@database.save("new-secret")

@@ -65,47 +65,35 @@ module Keyrack
           result = @ui.get_new_entry
           next if result.nil?
 
-          new_site = false
-          existing_sites = current_group.site_names
-          site =
-            if existing_sites.include?(result[:site])
-              current_group.site(result[:site])
-            else
-              new_site = true
-              Site.new(result[:site])
-            end
-
-          if !new_site && site.usernames.include?(result[:username])
-            if @ui.confirm_overwrite_entry(result[:site], result[:username])
-              site.change_password(result[:username], result[:password])
+          new_site = Site.new(*result.values_at(:site, :username, :password))
+          if site = current_group.sites.find { |s| s == new_site }
+            if @ui.confirm_overwrite_entry(site)
+              site.password = new_site.password
             end
           else
-            site.add_login(result[:username], result[:password])
+            current_group.add_site(new_site)
           end
-          current_group.add_site(site)  if new_site
         when :edit
           result = @ui.choose_entry_to_edit(current_group)
           next if result.nil?
-          site_name, username = result.values_at(:site, :username)
-          site = current_group.site(site_name)
+          site = result[:site]
 
           loop do
-            which = @ui.edit_entry(site_name, username)
+            which = @ui.edit_entry(site)
             case which
             when :change_username
-              new_username = @ui.change_username(username)
+              new_username = @ui.change_username(site.username)
               if new_username
-                site.change_username(username, new_username)
-                username = new_username
+                site.username = new_username
               end
             when :change_password
               new_password = @ui.get_new_password
               if new_password
-                site.change_password(username, new_password)
+                site.password = new_password
               end
             when :delete
-              if @ui.confirm_delete_entry(site_name, username)
-                site.remove_login(username)
+              if @ui.confirm_delete_entry(site)
+                current_group.remove_site(site)
                 break
               end
             when nil

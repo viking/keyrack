@@ -1,18 +1,18 @@
 require 'helper'
 
 class TestGroup < Test::Unit::TestCase
-  def new_group(arg)
-    Keyrack::Group.new(arg)
+  def new_group(*args)
+    Keyrack::Group.new(*args)
   end
 
-  def new_site(arg)
-    Keyrack::Site.new(arg)
+  def new_site(*args)
+    Keyrack::Site.new(*args)
   end
 
   test "initialize" do
     group = new_group("Starships")
     assert_equal "Starships", group.name
-    assert_equal({}, group.sites)
+    assert_equal([], group.sites)
     assert_equal({}, group.groups)
   end
 
@@ -26,14 +26,23 @@ class TestGroup < Test::Unit::TestCase
 
   test "add_site" do
     group = new_group("Starships")
-    site = new_site("Enterprise")
+    site = new_site("Enterprise", "picard", "livingston")
     group.add_site(site)
-    assert_equal({"Enterprise" => site}, group.sites)
+    assert_equal([site], group.sites)
+  end
+
+  test "add_site with same name" do
+    group = new_group("Starships")
+    site_1 = new_site("Enterprise", "picard", "livingston")
+    group.add_site(site_1)
+    site_2 = new_site("Enterprise", "riker", "trombone")
+    group.add_site(site_2)
+    assert_equal([site_1, site_2], group.sites)
   end
 
   test "adding already existing site raises error" do
     group = new_group("Starships")
-    site = new_site("Enterprise")
+    site = new_site("Enterprise", "picard", "livingston")
     group.add_site(site)
     assert_raises(Keyrack::GroupError) do
       group.add_site(site)
@@ -49,16 +58,17 @@ class TestGroup < Test::Unit::TestCase
 
   test "remove_site" do
     group = new_group("Starships")
-    site = new_site("Enterprise")
+    site = new_site("Enterprise", "picard", "livingston")
     group.add_site(site)
-    group.remove_site("Enterprise")
-    assert_equal({}, group.sites)
+    group.remove_site(site)
+    assert_equal([], group.sites)
   end
 
   test "removing non-existant site raises error" do
     group = new_group("Starships")
+    site = new_site("Enterprise", "picard", "livingston")
     assert_raises(Keyrack::GroupError) do
-      group.remove_site("Enterprise")
+      group.remove_site(site)
     end
   end
 
@@ -67,7 +77,7 @@ class TestGroup < Test::Unit::TestCase
     subgroup = new_group("Klingon")
     group.add_group(subgroup)
 
-    expected = {"Klingon" => {'name' => "Klingon", 'sites' => {}, 'groups' => {}}}
+    expected = {"Klingon" => {'name' => "Klingon", 'sites' => [], 'groups' => {}}}
     assert_equal(expected, group.groups)
   end
 
@@ -105,21 +115,23 @@ class TestGroup < Test::Unit::TestCase
   test "load group from hash" do
     hash = {
       'name' => "Starships",
-      'sites' => {
-        "Enterprise" => {
-          'name' => "Enterprise",
-          'logins' => {"picard" => "livingston"}
+      'sites' => [
+        {
+          'name' => 'Enterprise',
+          'username' => 'picard',
+          'password' => 'livingston'
         }
-      },
+      ],
       'groups' => {
         "Klingon" => {
           'name' => "Klingon",
-          'sites' => {
-            "Bortas" => {
+          'sites' => [
+            {
               'name' => "Bortas",
-              'logins' => {"gowron" => "bat'leth"}
+              'username' => "gowron",
+              'password' => "bat'leth"
             }
-          },
+          ],
           'groups' => {}
         }
       }
@@ -138,7 +150,7 @@ class TestGroup < Test::Unit::TestCase
 
   test "loading group from hash with missing name" do
     hash = {
-      'sites' => {},
+      'sites' => [],
       'groups' => {}
     }
     assert_raises(ArgumentError) do
@@ -149,7 +161,7 @@ class TestGroup < Test::Unit::TestCase
   test "loading group from hash with non-string name" do
     hash = {
       'name' => [123],
-      'sites' => {},
+      'sites' => [],
       'groups' => {}
     }
     assert_raises(ArgumentError) do
@@ -167,7 +179,7 @@ class TestGroup < Test::Unit::TestCase
     end
   end
 
-  test "loading group with non-hash sites" do
+  test "loading group with non-array sites" do
     hash = {
       'name' => "Starships",
       'sites' => "foo",
@@ -178,28 +190,12 @@ class TestGroup < Test::Unit::TestCase
     end
   end
 
-  test "loading group with non-string site name" do
+  test "loading group with non-hash site" do
     hash = {
       'name' => "Starships",
-      'sites' => {
-        [123] => {
-          'name' => "Enterprise",
-          'logins' => {"picard" => "livingston"}
-        }
-      },
-      'groups' => {}
-    }
-    assert_raises(ArgumentError) do
-      group = new_group(hash)
-    end
-  end
-
-  test "loading group with non-hash site value" do
-    hash = {
-      'name' => "Starships",
-      'sites' => {
-        "foo" => "foo"
-      },
+      'sites' => [
+        "foo"
+      ],
       'groups' => {}
     }
     assert_raises(ArgumentError) do
@@ -210,25 +206,9 @@ class TestGroup < Test::Unit::TestCase
   test "loading group with invalid site" do
     hash = {
       'name' => "Starships",
-      'sites' => {
-        "foo" => {"foo" => "bar"}
-      },
-      'groups' => {}
-    }
-    assert_raises(ArgumentError) do
-      group = new_group(hash)
-    end
-  end
-
-  test "loading group with mismatched site names" do
-    hash = {
-      'name' => "Starships",
-      'sites' => {
-        "Foo" => {
-          'name' => "Enterprise",
-          'logins' => {"picard" => "livingston"}
-        }
-      },
+      'sites' => [
+        {"foo" => "bar"}
+      ],
       'groups' => {}
     }
     assert_raises(ArgumentError) do
@@ -239,7 +219,7 @@ class TestGroup < Test::Unit::TestCase
   test "loading group with missing groups" do
     hash = {
       'name' => "Starships",
-      'sites' => {}
+      'sites' => []
     }
     assert_raises(ArgumentError) do
       group = new_group(hash)
@@ -249,7 +229,7 @@ class TestGroup < Test::Unit::TestCase
   test "loading group with non-hash groups" do
     hash = {
       'name' => "Starships",
-      'sites' => {},
+      'sites' => [],
       'groups' => "foo"
     }
     assert_raises(ArgumentError) do
@@ -260,11 +240,11 @@ class TestGroup < Test::Unit::TestCase
   test "loading group with non-string group name" do
     hash = {
       'name' => "Starships",
-      'sites' => {},
+      'sites' => [],
       'groups' => {
         [123] => {
           'name' => "Klingon",
-          'sites' => {},
+          'sites' => [],
           'groups' => {}
         }
       },
@@ -277,7 +257,7 @@ class TestGroup < Test::Unit::TestCase
   test "loading group with non-hash group value" do
     hash = {
       'name' => "Starships",
-      'sites' => {},
+      'sites' => [],
       'groups' => {
         "foo" => "bar"
       }
@@ -290,7 +270,7 @@ class TestGroup < Test::Unit::TestCase
   test "loading group with invalid sub-group" do
     hash = {
       'name' => "Starships",
-      'sites' => {},
+      'sites' => [],
       'groups' => {
         "foo" => {"foo" => "bar"}
       }
@@ -303,11 +283,11 @@ class TestGroup < Test::Unit::TestCase
   test "loading group with mismatched group names" do
     hash = {
       'name' => "Starships",
-      'sites' => {},
+      'sites' => [],
       'groups' => {
         "Foo" => {
           'name' => "Klingon",
-          'sites' => {},
+          'sites' => [],
           'groups' => {}
         }
       }
@@ -319,9 +299,9 @@ class TestGroup < Test::Unit::TestCase
 
   test "site getter" do
     group = new_group("Starships")
-    site = new_site("Enterprise")
+    site = new_site("Enterprise", "picard", "livingston")
     group.add_site(site)
-    assert_same site, group.site("Enterprise")
+    assert_same site, group.site(0)
   end
 
   test "group getter" do
@@ -329,13 +309,6 @@ class TestGroup < Test::Unit::TestCase
     subgroup = new_group("Klingon")
     group.add_group(subgroup)
     assert_same subgroup, group.group("Klingon")
-  end
-
-  test "site_names" do
-    group = new_group("Starships")
-    site = new_site("Enterprise")
-    group.add_site(site)
-    assert_equal ["Enterprise"], group.site_names
   end
 
   test "group_names" do
@@ -347,7 +320,7 @@ class TestGroup < Test::Unit::TestCase
 
   test "after_site_added callback" do
     group = new_group("Starships")
-    site = new_site("Enterprise")
+    site = new_site("Enterprise", "picard", "livingston")
 
     called = false
     group.after_site_added do |affected_group, added_site|
@@ -359,182 +332,91 @@ class TestGroup < Test::Unit::TestCase
     assert called
   end
 
-  test "after_login_added callback" do
-    group = new_group("Starships")
-    site = new_site("Enterprise")
-    group.add_site(site)
-
-    called = false
-    group.after_login_added do |affected_group, changed_site, username, password|
-      called = true
-      assert_same group, affected_group
-      assert_same site, changed_site
-      assert_equal "picard", username
-      assert_equal "livingston", password
-    end
-    site.add_login("picard", "livingston")
-    assert called
-  end
-
-  test "after_login_added callback for hash-loaded group" do
-    group = new_group({
-      'name' => "Starships",
-      'sites' => {
-        'Enterprise' => {
-          'name' => 'Enterprise',
-          'logins' => {}
-        }
-      },
-      'groups' => {}
-    })
-    site = group.site("Enterprise")
-
-    called = false
-    group.after_login_added do |affected_group, changed_site, username, password|
-      called = true
-      assert_same group, affected_group
-      assert_same site, changed_site
-      assert_equal "picard", username
-      assert_equal "livingston", password
-    end
-    site.add_login("picard", "livingston")
-    assert called
-  end
-
   test "after_username_changed callback" do
     group = new_group("Starships")
-    site = new_site("Enterprise")
+    site = new_site("Enterprise", "picard", "livingston")
     group.add_site(site)
-    site.add_login("picard", "livingston")
 
     called = false
-    group.after_username_changed do |affected_group, changed_site, old_username, new_username|
+    group.after_username_changed do |affected_group, affected_site|
       called = true
       assert_same group, affected_group
-      assert_same site, changed_site
-      assert_equal "picard", old_username
-      assert_equal "jean_luc", new_username
+      assert_same site, affected_site
+      assert_equal "jean_luc", affected_site.username
     end
-    site.change_username("picard", "jean_luc")
+    site.username = "jean_luc"
     assert called
   end
 
   test "after_username_changed callback for hash-loaded group" do
     group = new_group({
       'name' => "Starships",
-      'sites' => {
-        'Enterprise' => {
+      'sites' => [
+        {
           'name' => 'Enterprise',
-          'logins' => {'picard' => 'livingston'}
+          'username' => 'picard',
+          'password' => 'livingston'
         }
-      },
+      ],
       'groups' => {}
     })
-    site = group.site("Enterprise")
+    site = group.site(0)
 
     called = false
-    group.after_username_changed do |affected_group, changed_site, old_username, new_username|
+    group.after_username_changed do |affected_group, affected_site|
       called = true
       assert_same group, affected_group
-      assert_same site, changed_site
-      assert_equal "picard", old_username
-      assert_equal "jean_luc", new_username
+      assert_same site, affected_site
+      assert_equal "jean_luc", affected_site.username
     end
-    site.change_username("picard", "jean_luc")
+    site.username = "jean_luc"
     assert called
   end
 
   test "after_password_changed callback" do
     group = new_group("Starships")
-    site = new_site("Enterprise")
+    site = new_site("Enterprise", "picard", "livingston")
     group.add_site(site)
-    site.add_login("picard", "livingston")
 
     called = false
-    group.after_password_changed do |affected_group, changed_site, username, old_password, new_password|
+    group.after_password_changed do |affected_group, affected_site|
       called = true
       assert_same group, affected_group
-      assert_same site, changed_site
-      assert_equal "picard", username
-      assert_equal "livingston", old_password
-      assert_equal "crusher", new_password
+      assert_same site, affected_site
+      assert_equal "crusher", affected_site.password
     end
-    site.change_password("picard", "crusher")
+    site.password = "crusher"
     assert called
   end
 
   test "after_password_changed callback for hash-loaded group" do
     group = new_group({
       'name' => "Starships",
-      'sites' => {
-        'Enterprise' => {
+      'sites' => [
+        {
           'name' => 'Enterprise',
-          'logins' => {'picard' => 'livingston'}
+          'username' => 'picard',
+          'password' => 'livingston'
         }
-      },
+      ],
       'groups' => {}
     })
-    site = group.site("Enterprise")
+    site = group.site(0)
 
     called = false
-    group.after_password_changed do |affected_group, changed_site, username, old_password, new_password|
+    group.after_password_changed do |affected_group, affected_site|
       called = true
       assert_same group, affected_group
-      assert_same site, changed_site
-      assert_equal "picard", username
-      assert_equal "livingston", old_password
-      assert_equal "crusher", new_password
+      assert_same site, affected_site
+      assert_equal "crusher", affected_site.password
     end
-    site.change_password("picard", "crusher")
-    assert called
-  end
-
-  test "after_login_removed callback" do
-    group = new_group("Starships")
-    site = new_site("Enterprise")
-    group.add_site(site)
-    site.add_login("picard", "livingston")
-
-    called = false
-    group.after_login_removed do |affected_group, removed_site, username, password|
-      called = true
-      assert_same group, affected_group
-      assert_same site, removed_site
-      assert_equal "picard", username
-      assert_equal "livingston", password
-    end
-    site.remove_login("picard")
-    assert called
-  end
-
-  test "after_login_removed callback for hash-loaded group" do
-    group = new_group({
-      'name' => "Starships",
-      'sites' => {
-        'Enterprise' => {
-          'name' => 'Enterprise',
-          'logins' => {'picard' => 'livingston'}
-        }
-      },
-      'groups' => {}
-    })
-    site = group.site("Enterprise")
-
-    called = false
-    group.after_login_removed do |affected_group, removed_site, username, password|
-      called = true
-      assert_same group, affected_group
-      assert_same site, removed_site
-      assert_equal "picard", username
-      assert_equal "livingston", password
-    end
-    site.remove_login("picard")
+    site.password = "crusher"
     assert called
   end
 
   test "after_site_removed callback" do
     group = new_group("Starships")
-    site = new_site("Enterprise")
+    site = new_site("Enterprise", "picard", "livingston")
     group.add_site(site)
 
     called = false
@@ -543,7 +425,7 @@ class TestGroup < Test::Unit::TestCase
       assert_same group, affected_group
       assert_same site, removed_site
     end
-    group.remove_site("Enterprise")
+    group.remove_site(site)
     assert called
   end
 
@@ -578,32 +460,32 @@ class TestGroup < Test::Unit::TestCase
 
   test "to_yaml" do
     group = new_group("Starships")
-    site = new_site("Enterprise")
-    site.add_login("picard", "livingston")
+    site = new_site("Enterprise", "picard", "livingston")
     group.add_site(site)
     subgroup = new_group("Klingon")
-    subsite = new_site("Bortas")
-    subsite.add_login("gowron", "bat'leth")
+    subsite = new_site("Bortas", "gowron", "bat'leth")
     subgroup.add_site(subsite)
     group.add_group(subgroup)
 
     expected = {
       'name' => "Starships",
-      'sites' => {
-        "Enterprise" => {
+      'sites' => [
+        {
           'name' => "Enterprise",
-          'logins' => {"picard" => "livingston"}
+          'username' => 'picard',
+          'password' => 'livingston'
         }
-      },
+      ],
       'groups' => {
         "Klingon" => {
           'name' => "Klingon",
-          'sites' => {
-            "Bortas" => {
+          'sites' => [
+            {
               'name' => "Bortas",
-              'logins' => {"gowron" => "bat'leth"}
+              'username' => 'gowron',
+              'password' => "bat'leth"
             }
-          },
+          ],
           'groups' => {}
         }
       }

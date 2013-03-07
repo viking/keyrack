@@ -3,17 +3,15 @@ module Keyrack
     def initialize(arg = nil)
       @after_site_added = []
       @after_site_removed = []
-      @after_login_added = []
       @after_username_changed = []
       @after_password_changed = []
-      @after_login_removed = []
       @after_group_added = []
       @after_group_removed = []
 
       case arg
       when String
         self['name'] = arg
-        self['sites'] = {}
+        self['sites'] = []
         self['groups'] = {}
       when Hash
         load(arg)
@@ -36,8 +34,8 @@ module Keyrack
       if !hash.has_key?('sites')
         raise ArgumentError, "hash is missing the 'sites' key"
       end
-      if !hash['sites'].is_a?(Hash)
-        raise ArgumentError, "sites is not a Hash"
+      if !hash['sites'].is_a?(Array)
+        raise ArgumentError, "sites is not an Array"
       end
 
       if !hash.has_key?('groups')
@@ -47,24 +45,17 @@ module Keyrack
         raise ArgumentError, "groups is not a Hash"
       end
 
-      self['sites'] = {}
-      hash['sites'].each_pair do |site_name, site_hash|
-        if !site_name.is_a?(String)
-          raise ArgumentError, "site key is not a String"
-        end
+      self['sites'] = []
+      hash['sites'].each_with_index do |site_hash, site_index|
         if !site_hash.is_a?(Hash)
-          raise ArgumentError, "site value for #{site_name.inspect} is not a Hash"
+          raise ArgumentError, "site #{site_index} is not a Hash"
         end
 
         begin
           site = Site.new(site_hash)
           add_site(site)
         rescue SiteError => e
-          raise ArgumentError, "site #{site_name.inspect} is not valid: #{e.message}"
-        end
-
-        if site.name != site_name
-          raise ArgumentError, "site name mismatch: #{site_name.inspect} != #{site.name.inspect}"
+          raise ArgumentError, "site #{site_index} is not valid: #{e.message}"
         end
       end
 
@@ -114,20 +105,17 @@ module Keyrack
       end
     end
 
-    def site(site_name)
-      sites[site_name]
+    def site(index)
+      sites[index]
     end
 
-    def site_names
-      sites.keys
-    end
-
-    def remove_site(site_name)
+    def remove_site(site)
       raise "remove_site is not allowed until Group is initialized" if @uninitialized && !@loading
-      if !sites.has_key?(site_name)
+      index = sites.index(site)
+      if index.nil?
         raise GroupError, "site doesn't exist"
       end
-      site = sites.delete(site_name)
+      site = sites.delete_at(index)
 
       @after_site_removed.each do |block|
         block.call(self, site)
@@ -171,14 +159,6 @@ module Keyrack
       @after_site_removed << block
     end
 
-    def after_login_added(&block)
-      @after_login_added << block
-    end
-
-    def after_login_removed(&block)
-      @after_login_removed << block
-    end
-
     def after_username_changed(&block)
       @after_username_changed << block
     end
@@ -205,10 +185,11 @@ module Keyrack
       if !site.is_a?(Site)
         raise GroupError, "site is not a Site"
       end
-      if sites.has_key?(site.name)
-        raise GroupError, "site already exists"
+      if sites.include?(site)
+        raise GroupError,
+          "site (#{site.name.inspect}, #{site.username.inspect}) already exists"
       end
-      sites[site.name] = site
+      sites << site
       add_site_hooks_for(site)
     end
 
@@ -223,24 +204,14 @@ module Keyrack
     end
 
     def add_site_hooks_for(site)
-      site.after_login_added do |site, username, password|
-        @after_login_added.each do |block|
-          block.call(self, site, username, password)
-        end
-      end
-      site.after_username_changed do |site, old_username, new_username|
+      site.after_username_changed do |site|
         @after_username_changed.each do |block|
-          block.call(self, site, old_username, new_username)
+          block.call(self, site)
         end
       end
-      site.after_password_changed do |site, username, old_password, new_password|
+      site.after_password_changed do |site|
         @after_password_changed.each do |block|
-          block.call(self, site, username, old_password, new_password)
-        end
-      end
-      site.after_login_removed do |site, username, password|
-        @after_login_removed.each do |block|
-          block.call(self, site, username, password)
+          block.call(self, site)
         end
       end
     end

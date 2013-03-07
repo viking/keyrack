@@ -7,7 +7,7 @@ class TestRunner < Test::Unit::TestCase
       :get_new_entry => {:site => "Foo", :username => "bar", :password => "baz"}
     })
     Keyrack::UI::Console.stubs(:new).returns(@console)
-    @top_group = stub('top group', :site_names => [], :group_names => [])
+    @top_group = stub('top group', :sites => [], :group_names => [])
     @database = stub('database', :top_group => @top_group)
     Keyrack::Database.stubs(:new).returns(@database)
 
@@ -52,7 +52,7 @@ class TestRunner < Test::Unit::TestCase
     runner = Keyrack::Runner.new(["-d", @keyrack_dir])
   end
 
-  test "add site and login" do
+  test "add site" do
     setup_config
 
     seq = SequenceHelper.new('ui sequence')
@@ -61,8 +61,7 @@ class TestRunner < Test::Unit::TestCase
     seq << @console.expects(:get_new_entry).returns({:site => "Foo", :username => "bar", :password => "baz"})
 
     new_site = stub('site')
-    seq << Keyrack::Site.expects(:new).with('Foo').returns(new_site)
-    seq << new_site.expects(:add_login).with('bar', 'baz')
+    seq << Keyrack::Site.expects(:new).with('Foo', 'bar', 'baz').returns(new_site)
     seq << @top_group.expects(:add_site).with(new_site)
     seq << @database.expects(:dirty?).returns(true)
     seq << @console.expects(:menu).with(@menu_options.merge(:dirty => true)).returns(:quit)
@@ -70,56 +69,29 @@ class TestRunner < Test::Unit::TestCase
     runner = Keyrack::Runner.new(["-d", @keyrack_dir])
   end
 
-  test "add login to existing site" do
+  test "add existing site" do
     setup_config
 
     seq = SequenceHelper.new('ui sequence')
-    seq << @database.expects(:dirty?).returns(false)
-    seq << @console.expects(:menu).with(@menu_options).returns(:new)
-    seq << @console.expects(:get_new_entry).returns({:site => "Foo", :username => "bar", :password => "baz"})
-    seq << @top_group.expects(:site_names).returns([])
-
-    new_site = stub('Foo site')
-    seq << Keyrack::Site.expects(:new).with('Foo').returns(new_site)
-    seq << new_site.expects(:add_login).with('bar', 'baz')
-    seq << @top_group.expects(:add_site).with(new_site)
-
-    seq << @database.expects(:dirty?).returns(true)
-    seq << @console.expects(:menu).with(@menu_options.merge(:dirty => true)).returns(:new)
-    seq << @console.expects(:get_new_entry).returns({:site => "Foo", :username => "dude", :password => "secret"})
-    seq << @top_group.expects(:site_names).returns(['Foo'])
-    seq << @top_group.expects(:site).with('Foo').returns(new_site)
-    seq << new_site.expects(:usernames).returns(%w{bar})
-    seq << new_site.expects(:add_login).with('dude', 'secret')
-
-    seq << @database.expects(:dirty?).returns(true)
-    seq << @console.expects(:menu).with(@menu_options.merge(:dirty => true)).returns(:quit)
-
-    runner = Keyrack::Runner.new(["-d", @keyrack_dir])
-  end
-
-  test "add existing login to existing site" do
-    setup_config
-
-    seq = SequenceHelper.new('ui sequence')
-    seq << @database.expects(:dirty?).returns(false)
-    seq << @console.expects(:menu).with(@menu_options).returns(:new)
-    seq << @console.expects(:get_new_entry).returns({:site => "Foo", :username => "bar", :password => "baz"})
-    seq << @top_group.expects(:site_names).returns([])
-
-    new_site = stub('Foo site')
-    seq << Keyrack::Site.expects(:new).with('Foo').returns(new_site)
-    seq << new_site.expects(:add_login).with('bar', 'baz')
-    seq << @top_group.expects(:add_site).with(new_site)
+    foo_site = stub('Foo site', {
+      :name => 'Foo',
+      :username => 'bar',
+      :password => 'baz'
+    })
+    new_site = stub('new Foo site', {
+      :name => 'Foo',
+      :username => 'bar',
+      :password => 'junk'
+    })
+    foo_site.stubs(:==).with(new_site).returns(true)
 
     seq << @database.expects(:dirty?).returns(true)
     seq << @console.expects(:menu).with(@menu_options.merge(:dirty => true)).returns(:new)
     seq << @console.expects(:get_new_entry).returns({:site => "Foo", :username => "bar", :password => "junk"})
-    seq << @top_group.expects(:site_names).returns(['Foo'])
-    seq << @top_group.expects(:site).with('Foo').returns(new_site)
-    seq << new_site.expects(:usernames).returns(%w{bar})
-    seq << @console.expects(:confirm_overwrite_entry).with('Foo', 'bar').returns(true)
-    seq << new_site.expects(:change_password).with('bar', 'junk')
+    seq << Keyrack::Site.expects(:new).with('Foo', 'bar', 'junk').returns(new_site)
+    seq << @top_group.expects(:sites).returns([foo_site])
+    seq << @console.expects(:confirm_overwrite_entry).with(foo_site).returns(true)
+    seq << foo_site.expects(:password=).with('junk')
 
     seq << @database.expects(:dirty?).returns(true)
     seq << @console.expects(:menu).with(@menu_options.merge(:dirty => true)).returns(:quit)
@@ -144,10 +116,6 @@ class TestRunner < Test::Unit::TestCase
   test "canceling edit selection" do
     setup_config
 
-    @top_group.stubs(:site_names).returns(%w{Foo})
-    foo_site = stub('Foo group', :usernames => %w{bar baz})
-    @top_group.stubs(:site).with('Foo').returns(foo_site)
-
     seq = SequenceHelper.new('ui sequence')
     seq << @database.expects(:dirty?).returns(false)
     seq << @console.expects(:menu).with(@menu_options).returns(:edit)
@@ -162,18 +130,15 @@ class TestRunner < Test::Unit::TestCase
   test "changing username" do
     setup_config
 
-    @top_group.stubs(:site_names).returns(%w{Foo})
-    foo_site = stub('Foo group', :usernames => %w{bar baz})
-    @top_group.stubs(:site).with('Foo').returns(foo_site)
-
+    foo_site = stub('Foo site', :username => 'bar')
     seq = SequenceHelper.new('ui sequence')
     seq << @database.expects(:dirty?).returns(false)
     seq << @console.expects(:menu).with(@menu_options).returns(:edit)
-    seq << @console.expects(:choose_entry_to_edit).with(@top_group).returns({:site => 'Foo', :username => 'bar'})
-    seq << @console.expects(:edit_entry).with('Foo', 'bar').returns(:change_username)
+    seq << @console.expects(:choose_entry_to_edit).with(@top_group).returns({:site => foo_site})
+    seq << @console.expects(:edit_entry).with(foo_site).returns(:change_username)
     seq << @console.expects(:change_username).with('bar').returns('junk')
-    seq << foo_site.expects(:change_username).with('bar', 'junk')
-    seq << @console.expects(:edit_entry).with('Foo', 'junk').returns(nil)
+    seq << foo_site.expects(:username=).with('junk')
+    seq << @console.expects(:edit_entry).with(foo_site).returns(nil)
 
     seq << @database.expects(:dirty?).returns(true)
     seq << @console.expects(:menu).with(@menu_options.merge(:dirty => true)).returns(:quit)
@@ -184,17 +149,15 @@ class TestRunner < Test::Unit::TestCase
   test "cancel changing username" do
     setup_config
 
-    @top_group.stubs(:site_names).returns(%w{Foo})
-    foo_site = stub('Foo group', :usernames => %w{bar baz})
-    @top_group.stubs(:site).with('Foo').returns(foo_site)
+    foo_site = stub('Foo site', :username => 'bar')
 
     seq = SequenceHelper.new('ui sequence')
     seq << @database.expects(:dirty?).returns(false)
     seq << @console.expects(:menu).with(@menu_options).returns(:edit)
-    seq << @console.expects(:choose_entry_to_edit).with(@top_group).returns({:site => 'Foo', :username => 'bar'})
-    seq << @console.expects(:edit_entry).with('Foo', 'bar').returns(:change_username)
+    seq << @console.expects(:choose_entry_to_edit).with(@top_group).returns({:site => foo_site})
+    seq << @console.expects(:edit_entry).with(foo_site).returns(:change_username)
     seq << @console.expects(:change_username).with('bar').returns(nil)
-    seq << @console.expects(:edit_entry).with('Foo', 'bar').returns(nil)
+    seq << @console.expects(:edit_entry).with(foo_site).returns(nil)
 
     seq << @database.expects(:dirty?).returns(false)
     seq << @console.expects(:menu).with(@menu_options).returns(:quit)
@@ -205,18 +168,16 @@ class TestRunner < Test::Unit::TestCase
   test "changing password" do
     setup_config
 
-    @top_group.stubs(:site_names).returns(%w{Foo})
-    foo_site = stub('Foo group', :usernames => %w{bar baz})
-    @top_group.stubs(:site).with('Foo').returns(foo_site)
+    foo_site = stub('Foo site')
 
     seq = SequenceHelper.new('ui sequence')
     seq << @database.expects(:dirty?).returns(false)
     seq << @console.expects(:menu).with(@menu_options).returns(:edit)
-    seq << @console.expects(:choose_entry_to_edit).with(@top_group).returns({:site => 'Foo', :username => 'bar'})
-    seq << @console.expects(:edit_entry).with('Foo', 'bar').returns(:change_password)
+    seq << @console.expects(:choose_entry_to_edit).with(@top_group).returns({:site => foo_site})
+    seq << @console.expects(:edit_entry).with(foo_site).returns(:change_password)
     seq << @console.expects(:get_new_password).returns('secret')
-    seq << foo_site.expects(:change_password).with('bar', 'secret')
-    seq << @console.expects(:edit_entry).with('Foo', 'bar').returns(nil)
+    seq << foo_site.expects(:password=).with('secret')
+    seq << @console.expects(:edit_entry).with(foo_site).returns(nil)
 
     seq << @database.expects(:dirty?).returns(true)
     seq << @console.expects(:menu).with(@menu_options.merge(:dirty => true)).returns(:quit)
@@ -227,17 +188,15 @@ class TestRunner < Test::Unit::TestCase
   test "cancel changing password" do
     setup_config
 
-    @top_group.stubs(:site_names).returns(%w{Foo})
-    foo_site = stub('Foo group', :usernames => %w{bar baz})
-    @top_group.stubs(:site).with('Foo').returns(foo_site)
+    foo_site = stub('Foo site')
 
     seq = SequenceHelper.new('ui sequence')
     seq << @database.expects(:dirty?).returns(false)
     seq << @console.expects(:menu).with(@menu_options).returns(:edit)
-    seq << @console.expects(:choose_entry_to_edit).with(@top_group).returns({:site => 'Foo', :username => 'bar'})
-    seq << @console.expects(:edit_entry).with('Foo', 'bar').returns(:change_password)
+    seq << @console.expects(:choose_entry_to_edit).with(@top_group).returns({:site => foo_site})
+    seq << @console.expects(:edit_entry).with(foo_site).returns(:change_password)
     seq << @console.expects(:get_new_password).returns(nil)
-    seq << @console.expects(:edit_entry).with('Foo', 'bar').returns(nil)
+    seq << @console.expects(:edit_entry).with(foo_site).returns(nil)
 
     seq << @database.expects(:dirty?).returns(false)
     seq << @console.expects(:menu).with(@menu_options).returns(:quit)
@@ -248,17 +207,15 @@ class TestRunner < Test::Unit::TestCase
   test "delete entry" do
     setup_config
 
-    @top_group.stubs(:site_names).returns(%w{Foo})
-    foo_site = stub('Foo group', :usernames => %w{bar baz})
-    @top_group.stubs(:site).with('Foo').returns(foo_site)
+    foo_site = stub('Foo site', :name => 'Foo', :username => 'bar')
 
     seq = SequenceHelper.new('ui sequence')
     seq << @database.expects(:dirty?).returns(false)
     seq << @console.expects(:menu).with(@menu_options).returns(:edit)
-    seq << @console.expects(:choose_entry_to_edit).with(@top_group).returns({:site => 'Foo', :username => 'bar'})
-    seq << @console.expects(:edit_entry).with('Foo', 'bar').returns(:delete)
-    seq << @console.expects(:confirm_delete_entry).with('Foo', 'bar').returns(true)
-    seq << foo_site.expects(:remove_login).with('bar')
+    seq << @console.expects(:choose_entry_to_edit).with(@top_group).returns({:site => foo_site})
+    seq << @console.expects(:edit_entry).with(foo_site).returns(:delete)
+    seq << @console.expects(:confirm_delete_entry).with(foo_site).returns(true)
+    seq << @top_group.expects(:remove_site).with(foo_site)
 
     seq << @database.expects(:dirty?).returns(true)
     seq << @console.expects(:menu).with(@menu_options.merge(:dirty => true)).returns(:quit)
@@ -269,17 +226,15 @@ class TestRunner < Test::Unit::TestCase
   test "cancel delete entry" do
     setup_config
 
-    @top_group.stubs(:site_names).returns(%w{Foo})
-    foo_site = stub('Foo group', :usernames => %w{bar baz})
-    @top_group.stubs(:site).with('Foo').returns(foo_site)
+    foo_site = stub('Foo site')
 
     seq = SequenceHelper.new('ui sequence')
     seq << @database.expects(:dirty?).returns(false)
     seq << @console.expects(:menu).with(@menu_options).returns(:edit)
-    seq << @console.expects(:choose_entry_to_edit).with(@top_group).returns({:site => 'Foo', :username => 'bar'})
-    seq << @console.expects(:edit_entry).with('Foo', 'bar').returns(:delete)
-    seq << @console.expects(:confirm_delete_entry).with('Foo', 'bar').returns(false)
-    seq << @console.expects(:edit_entry).with('Foo', 'bar').returns(nil)
+    seq << @console.expects(:choose_entry_to_edit).with(@top_group).returns({:site => foo_site})
+    seq << @console.expects(:edit_entry).with(foo_site).returns(:delete)
+    seq << @console.expects(:confirm_delete_entry).with(foo_site).returns(false)
+    seq << @console.expects(:edit_entry).with(foo_site).returns(nil)
 
     seq << @database.expects(:dirty?).returns(false)
     seq << @console.expects(:menu).with(@menu_options).returns(:quit)

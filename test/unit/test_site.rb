@@ -1,103 +1,53 @@
 require 'helper'
 
 class TestSite < Test::Unit::TestCase
-  def new_site(arg)
-    Keyrack::Site.new(arg)
+  def new_site(*args)
+    Keyrack::Site.new(*args)
   end
 
   test "creating new site" do
-    site = new_site("Enterprise")
+    site = new_site("Enterprise", "picard", "livingston")
     assert_equal "Enterprise", site.name
   end
 
-  test "add_login" do
-    site = new_site("Enterprise")
-    site.add_login("picard", "livingston")
-    assert_equal({"picard" => "livingston"}, site.logins)
+  test "username" do
+    site = new_site("Enterprise", "picard", "livingston")
+    assert_equal "picard", site.username
   end
 
-  test "adding existing login raises error" do
-    site = new_site("Enterprise")
-    site.add_login("picard", "livingston")
-    assert_raises(Keyrack::SiteError) do
-      site.add_login("picard", "livingston")
-    end
+  test "username setter" do
+    site = new_site("Enterprise", "picard", "livingston")
+    site.username = "jean_luc"
+    assert_equal "jean_luc", site.username
   end
 
-  test "usernames" do
-    site = new_site("Enterprise")
-    site.add_login("picard", "livingston")
-    assert_equal ["picard"], site.usernames
+  test "password" do
+    site = new_site("Enterprise", "picard", "livingston")
+    assert_equal "livingston", site.password
   end
 
-  test "password_for" do
-    site = new_site("Enterprise")
-    site.add_login("picard", "livingston")
-    assert_equal "livingston", site.password_for("picard")
-  end
-
-  test "getting password for non-existant username" do
-    site = new_site("Enterprise")
-    assert_raises(Keyrack::SiteError) do
-      site.password_for("picard")
-    end
-  end
-
-  test "change_password" do
-    site = new_site("Enterprise")
-    site.add_login("picard", "livingston")
-    site.change_password("picard", "crusher")
-    assert_equal({"picard" => "crusher"}, site.logins)
-  end
-
-  test "changing password for non-existant login raises error" do
-    site = new_site("Enterprise")
-    assert_raises(Keyrack::SiteError) do
-      site.change_password("picard", "crusher")
-    end
-  end
-
-  test "change_username" do
-    site = new_site("Enterprise")
-    site.add_login("picard", "livingston")
-    site.change_username("picard", "jean_luc")
-    assert_equal({"jean_luc" => "livingston"}, site.logins)
-  end
-
-  test "changing username for non-existant login raises error" do
-    site = new_site("Enterprise")
-    assert_raises(Keyrack::SiteError) do
-      site.change_username("picard", "jean_luc")
-    end
-  end
-
-  test "remove_login" do
-    site = new_site("Enterprise")
-    site.add_login("picard", "livingston")
-    site.remove_login("picard")
-    assert_equal({}, site.logins)
-  end
-
-  test "removing non-existant login raises error" do
-    site = new_site("Enterprise")
-    assert_raises(Keyrack::SiteError) do
-      site.remove_login("picard")
-    end
+  test "password setter" do
+    site = new_site("Enterprise", "picard", "livingston")
+    site.password = "crusher"
+    assert_equal "crusher", site.password
   end
 
   test "loading site from hash" do
     hash = {
-      'name' => "Enterprise",
-      'logins' => {"picard" => "livingston"}
+      'name' => 'Enterprise',
+      'username' => 'picard',
+      'password' => 'livingston'
     }
     site = new_site(hash)
-    assert_equal "Enterprise", site.name
-    assert_equal hash['logins'], site.logins
+    assert_equal 'Enterprise', site.name
+    assert_equal 'picard', site.username
+    assert_equal 'livingston', site.password
   end
 
   test "loading site from hash with missing name" do
     hash = {
-      'logins' => {"picard" => "livingston"}
+      'username' => 'picard',
+      'password' => 'livingston'
     }
     assert_raises(ArgumentError) do
       site = new_site(hash)
@@ -107,109 +57,97 @@ class TestSite < Test::Unit::TestCase
   test "loading site from hash with non-string name" do
     hash = {
       'name' => [123],
-      'logins' => {"picard" => "livingston"}
+      'username' => 'picard',
+      'password' => 'livingston'
     }
     assert_raises(ArgumentError) do
       site = new_site(hash)
     end
   end
 
-  test "loading site with missing logins" do
+  test "loading site from hash with missing username" do
     hash = {
-      'name' => "Enterprise"
+      'name' => 'Enterprise',
+      'password' => 'livingston'
     }
     assert_raises(ArgumentError) do
       site = new_site(hash)
     end
   end
 
-  test "loading site with non-hash logins" do
+  test "loading site from hash with non-string username" do
     hash = {
-      'name' => "Enterprise",
-      'logins' => "foo"
+      'name' => 'Enterprise',
+      'username' => [123],
+      'password' => 'livingston'
     }
     assert_raises(ArgumentError) do
       site = new_site(hash)
     end
   end
 
-  test "loading site with invalid logins hash" do
+  test "loading site from hash with missing password" do
     hash = {
-      'name' => "Enterprise",
-      'logins' => {[123] => [456]}
+      'name' => 'Enterprise',
+      'username' => 'picard'
     }
     assert_raises(ArgumentError) do
       site = new_site(hash)
     end
   end
 
-  test "after_login_added callback" do
-    site = new_site("Enterprise")
-
-    called = false
-    site.after_login_added do |affected_site, username, password|
-      called = true
-      assert_same site, affected_site
-      assert_equal "picard", username
-      assert_equal "livingston", password
+  test "loading site from hash with non-string password" do
+    hash = {
+      'name' => 'Enterprise',
+      'username' => 'picard',
+      'password' => [123]
+    }
+    assert_raises(ArgumentError) do
+      site = new_site(hash)
     end
-    site.add_login("picard", "livingston")
-    assert called
   end
 
   test "after_password_changed callback" do
-    site = new_site("Enterprise")
-    site.add_login("picard", "livingston")
+    site = new_site("Enterprise", "picard", "livingston")
 
     called = false
-    site.after_password_changed do |affected_site, username, old_password, new_password|
+    site.after_password_changed do |affected_site|
       called = true
       assert_same site, affected_site
-      assert_equal "picard", username
-      assert_equal "livingston", old_password
-      assert_equal "crusher", new_password
+      assert_equal "crusher", affected_site.password
     end
-    site.change_password("picard", "crusher")
+    site.password = "crusher"
     assert called
   end
 
   test "after_username_changed callback" do
-    site = new_site("Enterprise")
-    site.add_login("picard", "livingston")
+    site = new_site("Enterprise", "picard", "livingston")
 
     called = false
-    site.after_username_changed do |affected_site, old_username, new_username|
+    site.after_username_changed do |affected_site|
       called = true
       assert_same site, affected_site
-      assert_equal "picard", old_username
-      assert_equal "jean_luc", new_username
+      assert_equal "jean_luc", affected_site.username
     end
-    site.change_username("picard", "jean_luc")
-    assert called
-  end
-
-  test "after_login_removed callback" do
-    site = new_site("Enterprise")
-    site.add_login("picard", "livingston")
-
-    called = false
-    site.after_login_removed do |affected_site, username, password|
-      called = true
-      assert_same site, affected_site
-      assert_equal "picard", username
-      assert_equal "livingston", password
-    end
-    site.remove_login("picard")
+    site.username = "jean_luc"
     assert called
   end
 
   test "serializing to yaml" do
-    site = new_site("Enterprise")
-    site.add_login("picard", "livingston")
+    site = new_site("Enterprise", "picard", "livingston")
     expected = {
-      'name' => "Enterprise",
-      'logins' => {"picard" => "livingston"}
+      'name' => 'Enterprise',
+      'username' => 'picard',
+      'password' => 'livingston'
     }.to_yaml
     assert_equal expected, site.to_yaml
+  end
+
+  test "sites with same name and username are equal" do
+    site_1 = new_site("Enterprise", "picard", "livingston")
+    site_2 = new_site("Enterprise", "picard", "crusher")
+    site_3 = new_site("Enterprise", "jean_luc", "crusher")
+    assert_equal site_1, site_2
+    assert_not_equal site_1, site_3
   end
 end

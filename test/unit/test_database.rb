@@ -60,9 +60,8 @@ class TestDatabase < Test::Unit::TestCase
 
   test "auto-migrating database from version 3" do
     store = Keyrack::Store['filesystem'].new('path' => fixture_path('database-3.dat'))
-    assert_nothing_raised do
-      database = Keyrack::Database.new('foobar', store)
-    end
+    database = Keyrack::Database.new('foobar', store)
+    assert database.dirty?
   end
 
   [true, false].each do |reload|

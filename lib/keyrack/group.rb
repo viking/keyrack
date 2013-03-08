@@ -53,7 +53,7 @@ module Keyrack
 
         begin
           site = Site.new(site_hash)
-          add_site(site)
+          add_site_without_callbacks(site)
         rescue SiteError => e
           raise ArgumentError, "site #{site_index} is not valid: #{e.message}"
         end
@@ -70,7 +70,7 @@ module Keyrack
 
         begin
           group = Group.new(group_hash)
-          add_group(group)
+          add_group_without_callbacks(group)
         rescue ArgumentError => e
           raise ArgumentError, "group #{group_name.inspect} is not valid: #{e.message}"
         end

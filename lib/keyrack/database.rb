@@ -5,12 +5,12 @@ module Keyrack
     VERSION = 4
 
     def initialize(password, store, encrypt_options = {}, decrypt_options = {})
+      @dirty = false
       @encrypt_options = DEFAULT_ENCRYPT_OPTIONS.merge(encrypt_options)
       @decrypt_options = DEFAULT_DECRYPT_OPTIONS.merge(decrypt_options)
       @store = store
       @password = password
       @database = decrypt
-      @dirty = false
       setup_hooks
     end
 
@@ -53,7 +53,12 @@ module Keyrack
       if data
         str = Scrypty.decrypt(data, @password,
           *@decrypt_options.values_at(:maxmem, :maxmemfrac, :maxtime))
-        hash = Migrator.run(YAML.load(str))
+        hash = YAML.load(str)
+        migrated_hash = Migrator.run(hash)
+        if !migrated_hash.equal?(hash)
+          hash = migrated_hash
+          @dirty = true
+        end
 
         top = Group.new
         add_group_hooks_for(top)

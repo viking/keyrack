@@ -297,6 +297,39 @@ class TestGroup < Test::Unit::TestCase
     end
   end
 
+  test "loading group from hash does not call hooks" do
+    hash = {
+      'name' => "Starships",
+      'sites' => [
+        {
+          'name' => 'Enterprise',
+          'username' => 'picard',
+          'password' => 'livingston'
+        }
+      ],
+      'groups' => {
+        "Klingon" => {
+          'name' => "Klingon",
+          'sites' => [
+            {
+              'name' => "Bortas",
+              'username' => "gowron",
+              'password' => "bat'leth"
+            }
+          ],
+          'groups' => {}
+        }
+      }
+    }
+    group = Keyrack::Group.new
+    called = false
+    group.after_site_added { |_, _| called = true }
+    group.after_username_changed { |_, _| called = true }
+    group.after_password_changed { |_, _| called = true }
+    group.load(hash)
+    assert !called
+  end
+
   test "site getter" do
     group = new_group("Starships")
     site = new_site("Enterprise", "picard", "livingston")

@@ -24,6 +24,13 @@ class TestGroup < Test::Unit::TestCase
     assert_raises(RuntimeError) { group.remove_group('Foo') }
   end
 
+  test "change name" do
+    group = new_group("Starships")
+    assert_equal "Starships", group.name
+    group.name = "Galaxy class starships"
+    assert_equal "Galaxy class starships", group.name
+  end
+
   test "add_site" do
     group = new_group("Starships")
     site = new_site("Enterprise", "picard", "livingston")
@@ -351,6 +358,34 @@ class TestGroup < Test::Unit::TestCase
     assert_equal ["Klingon"], group.group_names
   end
 
+  test "after_name_changed callback" do
+    group = new_group("Starships")
+
+    called = false
+    group.after_name_changed do |affected_group|
+      called = true
+      assert_same group, affected_group
+      assert_equal "Galaxy class starships", affected_group.name
+    end
+    group.name = "Galaxy class starships"
+    assert called
+  end
+
+  test "after_name_changed callback for subgroup" do
+    group = new_group("Starships")
+    subgroup = new_group("Galaxy class")
+    group.add_group(subgroup)
+
+    called = false
+    group.after_name_changed do |affected_group|
+      called = true
+      assert_same subgroup, affected_group
+      assert_equal "Excelsior class", affected_group.name
+    end
+    subgroup.name = "Excelsior class"
+    assert called
+  end
+
   test "after_site_added callback" do
     group = new_group("Starships")
     site = new_site("Enterprise", "picard", "livingston")
@@ -362,6 +397,22 @@ class TestGroup < Test::Unit::TestCase
       assert_same site, added_site
     end
     group.add_site(site)
+    assert called
+  end
+
+  test "after_site_added callback for subgroup" do
+    group = new_group("Starships")
+    subgroup = new_group("Galaxy class")
+    group.add_group(subgroup)
+    site = new_site("Enterprise", "picard", "livingston")
+
+    called = false
+    group.after_site_added do |affected_group, added_site|
+      called = true
+      assert_same subgroup, affected_group
+      assert_same site, added_site
+    end
+    subgroup.add_site(site)
     assert called
   end
 
@@ -401,6 +452,23 @@ class TestGroup < Test::Unit::TestCase
       assert_same group, affected_group
       assert_same site, affected_site
       assert_equal "jean_luc", affected_site.username
+    end
+    site.username = "jean_luc"
+    assert called
+  end
+
+  test "after_username_changed callback for subgroup" do
+    group = new_group("Starships")
+    subgroup = new_group("Galaxy class")
+    group.add_group(subgroup)
+    site = new_site("Enterprise", "picard", "livingston")
+    subgroup.add_site(site)
+
+    called = false
+    group.after_username_changed do |affected_group, affected_site|
+      called = true
+      assert_same subgroup, affected_group
+      assert_same site, affected_site
     end
     site.username = "jean_luc"
     assert called
@@ -447,6 +515,23 @@ class TestGroup < Test::Unit::TestCase
     assert called
   end
 
+  test "after_password_changed callback for subgroup" do
+    group = new_group("Starships")
+    subgroup = new_group("Galaxy class")
+    group.add_group(subgroup)
+    site = new_site("Enterprise", "picard", "livingston")
+    subgroup.add_site(site)
+
+    called = false
+    group.after_password_changed do |affected_group, affected_site|
+      called = true
+      assert_same subgroup, affected_group
+      assert_same site, affected_site
+    end
+    site.password = "crusher"
+    assert called
+  end
+
   test "after_site_removed callback" do
     group = new_group("Starships")
     site = new_site("Enterprise", "picard", "livingston")
@@ -459,6 +544,23 @@ class TestGroup < Test::Unit::TestCase
       assert_same site, removed_site
     end
     group.remove_site(site)
+    assert called
+  end
+
+  test "after_site_removed callback for subgroup" do
+    group = new_group("Starships")
+    subgroup = new_group("Galaxy class")
+    group.add_group(subgroup)
+    site = new_site("Enterprise", "picard", "livingston")
+    subgroup.add_site(site)
+
+    called = false
+    group.after_site_removed do |affected_group, removed_site|
+      called = true
+      assert_same subgroup, affected_group
+      assert_same site, removed_site
+    end
+    subgroup.remove_site(site)
     assert called
   end
 
@@ -476,6 +578,22 @@ class TestGroup < Test::Unit::TestCase
     assert called
   end
 
+  test "after_group_added callback for subgroup" do
+    group = new_group("Starships")
+    subgroup = new_group("Galaxy class")
+    group.add_group(subgroup)
+    subsubgroup = new_group("Flagships")
+
+    called = false
+    group.after_group_added do |affected_group, added_group|
+      called = true
+      assert_same subgroup, affected_group
+      assert_same subsubgroup, added_group
+    end
+    subgroup.add_group(subsubgroup)
+    assert called
+  end
+
   test "after_group_removed callback" do
     group = new_group("Starships")
     subgroup = new_group("Klingon")
@@ -488,6 +606,23 @@ class TestGroup < Test::Unit::TestCase
       assert_same subgroup, removed_group
     end
     group.remove_group("Klingon")
+    assert called
+  end
+
+  test "after_group_removed callback for subgroup" do
+    group = new_group("Starships")
+    subgroup = new_group("Galaxy class")
+    group.add_group(subgroup)
+    subsubgroup = new_group("Flagships")
+    subgroup.add_group(subsubgroup)
+
+    called = false
+    group.after_group_removed do |affected_group, removed_group|
+      called = true
+      assert_same subgroup, affected_group
+      assert_same subsubgroup, removed_group
+    end
+    subgroup.remove_group("Flagships")
     assert called
   end
 

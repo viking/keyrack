@@ -1,6 +1,7 @@
 module Keyrack
   class Group < Hash
     def initialize(arg = nil)
+      @after_name_changed = []
       @after_site_added = []
       @after_site_removed = []
       @after_username_changed = []
@@ -88,6 +89,14 @@ module Keyrack
       self['name']
     end
 
+    def name=(name)
+      self['name'] = name
+
+      @after_name_changed.each do |block|
+        block.call(self)
+      end
+    end
+
     def sites
       self['sites']
     end
@@ -151,6 +160,10 @@ module Keyrack
       end
     end
 
+    def after_name_changed(&block)
+      @after_name_changed << block
+    end
+
     def after_site_added(&block)
       @after_site_added << block
     end
@@ -201,6 +214,7 @@ module Keyrack
         raise GroupError, "group already exists"
       end
       groups[group.name] = group
+      add_group_hooks_for(group)
     end
 
     def add_site_hooks_for(site)
@@ -212,6 +226,44 @@ module Keyrack
       site.after_password_changed do |site|
         @after_password_changed.each do |block|
           block.call(self, site)
+        end
+      end
+    end
+
+    def add_group_hooks_for(group)
+      group.after_name_changed do |group|
+        @after_name_changed.each do |block|
+          block.call(group)
+        end
+      end
+      group.after_site_added do |group, site|
+        @after_site_added.each do |block|
+          block.call(group, site)
+        end
+      end
+      group.after_username_changed do |group, site|
+        @after_username_changed.each do |block|
+          block.call(group, site)
+        end
+      end
+      group.after_password_changed do |group, site|
+        @after_password_changed.each do |block|
+          block.call(group, site)
+        end
+      end
+      group.after_site_removed do |group, site|
+        @after_site_removed.each do |block|
+          block.call(group, site)
+        end
+      end
+      group.after_group_added do |group, subgroup|
+        @after_group_added.each do |block|
+          block.call(group, subgroup)
+        end
+      end
+      group.after_group_removed do |group, subgroup|
+        @after_group_removed.each do |block|
+          block.call(group, subgroup)
         end
       end
     end

@@ -61,7 +61,6 @@ module Keyrack
         end
 
         top = Group.new
-        add_group_hooks_for(top)
         top.load(hash['groups']['top'])
         hash['groups']['top'] = top
 
@@ -92,7 +91,6 @@ module Keyrack
       end
       group.after_group_added do |affected_group, added_group|
         @dirty = true
-        add_group_hooks_for(added_group)
       end
       group.after_group_removed do |affected_group, removed_group|
         @dirty = true

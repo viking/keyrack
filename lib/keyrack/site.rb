@@ -28,12 +28,25 @@ module Keyrack
         self['password'] = args[2]
       end
 
-      @after_username_changed = []
-      @after_password_changed = []
+      @event_hooks = []
+    end
+
+    def change_attribute(name, value)
+      event = Event.new(self, 'change')
+      event.attribute_name = name
+      event.previous_value = self[name]
+      event.new_value = value
+
+      self[name] = value
+      trigger(event)
     end
 
     def name
       self['name']
+    end
+
+    def name=(name)
+      change_attribute('name', name)
     end
 
     def username
@@ -41,11 +54,7 @@ module Keyrack
     end
 
     def username=(username)
-      self['username'] = username
-
-      @after_username_changed.each do |block|
-        block.call(self)
-      end
+      change_attribute('username', username)
     end
 
     def password
@@ -53,19 +62,11 @@ module Keyrack
     end
 
     def password=(password)
-      self['password'] = password
-
-      @after_password_changed.each do |block|
-        block.call(self)
-      end
+      change_attribute('password', password)
     end
 
-    def after_username_changed(&block)
-      @after_username_changed << block
-    end
-
-    def after_password_changed(&block)
-      @after_password_changed << block
+    def after_event(&block)
+      @event_hooks << block
     end
 
     def encode_with(coder)
@@ -77,6 +78,14 @@ module Keyrack
         other.name == name && other.username == username
       else
         super
+      end
+    end
+
+    private
+
+    def trigger(event)
+      @event_hooks.each do |block|
+        block.call(event)
       end
     end
   end

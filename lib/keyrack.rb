@@ -13,6 +13,7 @@ end
 
 require File.dirname(__FILE__) + '/keyrack/exceptions'
 require File.dirname(__FILE__) + '/keyrack/utils'
+require File.dirname(__FILE__) + '/keyrack/event'
 require File.dirname(__FILE__) + '/keyrack/site'
 require File.dirname(__FILE__) + '/keyrack/group'
 require File.dirname(__FILE__) + '/keyrack/database'

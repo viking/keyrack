@@ -1,14 +1,6 @@
 module Keyrack
   class Group < Hash
     def initialize(arg = nil)
-      @after_name_changed = []
-      @after_site_added = []
-      @after_site_removed = []
-      @after_username_changed = []
-      @after_password_changed = []
-      @after_group_added = []
-      @after_group_removed = []
-
       case arg
       when String
         self['name'] = arg
@@ -19,6 +11,8 @@ module Keyrack
       when nil
         @uninitialized = true
       end
+
+      @after_event = []
     end
 
     def load(hash)
@@ -85,16 +79,22 @@ module Keyrack
       @uninitialized = false
     end
 
+    def change_attribute(name, value)
+      event = Event.new(self, 'change')
+      event.attribute_name = name
+      event.previous_value = self[name]
+      event.new_value = value
+
+      self[name] = value
+      trigger(event)
+    end
+
     def name
       self['name']
     end
 
     def name=(name)
-      self['name'] = name
-
-      @after_name_changed.each do |block|
-        block.call(self)
-      end
+      change_attribute('name', name)
     end
 
     def sites
@@ -109,9 +109,10 @@ module Keyrack
       raise "add_site is not allowed until Group is initialized" if @uninitialized && !@loading
       add_site_without_callbacks(site)
 
-      @after_site_added.each do |block|
-        block.call(self, site)
-      end
+      event = Event.new(self, 'add')
+      event.collection_name = 'sites'
+      event.object = site
+      trigger(event)
     end
 
     def site(index)
@@ -126,18 +127,33 @@ module Keyrack
       end
       site = sites.delete_at(index)
 
-      @after_site_removed.each do |block|
-        block.call(self, site)
-      end
+      event = Event.new(self, 'remove')
+      event.collection_name = 'sites'
+      event.object = site
+      trigger(event)
     end
 
     def add_group(group)
       raise "add_group is not allowed until Group is initialized" if @uninitialized && !@loading
       add_group_without_callbacks(group)
 
-      @after_group_added.each do |block|
-        block.call(self, group)
+      event = Event.new(self, 'add')
+      event.collection_name = 'groups'
+      event.object = group
+      trigger(event)
+    end
+
+    def remove_group(group_name)
+      raise "remove_group is not allowed until Group is initialized" if @uninitialized && !@loading
+      if !groups.has_key?(group_name)
+        raise GroupError, "group doesn't exist"
       end
+      group = groups.delete(group_name)
+
+      event = Event.new(self, 'remove')
+      event.collection_name = 'groups'
+      event.object = group
+      trigger(event)
     end
 
     def group(group_name)
@@ -148,44 +164,8 @@ module Keyrack
       groups.keys
     end
 
-    def remove_group(group_name)
-      raise "remove_group is not allowed until Group is initialized" if @uninitialized && !@loading
-      if !groups.has_key?(group_name)
-        raise GroupError, "group doesn't exist"
-      end
-      group = groups.delete(group_name)
-
-      @after_group_removed.each do |block|
-        block.call(self, group)
-      end
-    end
-
-    def after_name_changed(&block)
-      @after_name_changed << block
-    end
-
-    def after_site_added(&block)
-      @after_site_added << block
-    end
-
-    def after_site_removed(&block)
-      @after_site_removed << block
-    end
-
-    def after_username_changed(&block)
-      @after_username_changed << block
-    end
-
-    def after_password_changed(&block)
-      @after_password_changed << block
-    end
-
-    def after_group_added(&block)
-      @after_group_added << block
-    end
-
-    def after_group_removed(&block)
-      @after_group_removed << block
+    def after_event(&block)
+      @after_event << block
     end
 
     def encode_with(coder)
@@ -217,59 +197,28 @@ module Keyrack
       add_group_hooks_for(group)
     end
 
-    def add_site_hooks_for(site)
-      site.after_username_changed do |site|
-        @after_username_changed.each do |block|
-          block.call(self, site)
-        end
+    def trigger(event)
+      @after_event.each do |block|
+        block.call(event)
       end
-      site.after_password_changed do |site|
-        @after_password_changed.each do |block|
-          block.call(self, site)
-        end
+    end
+
+    def add_site_hooks_for(site)
+      site.after_event do |site_event|
+        trigger(Event.new(self, 'change', site_event))
       end
     end
 
     def add_group_hooks_for(group)
-      group.after_name_changed do |group|
-        key, value = self.groups.find { |(k, v)| v.equal?(group) }
-        if key
-          self['groups'][group.name] = self['groups'].delete(key)
+      group.after_event do |group_event|
+        if group_event.name == 'change' && group_event.attribute_name == 'name'
+          key, value = self.groups.find { |(k, v)| v.equal?(group) }
+          if key
+            self['groups'][group.name] = self['groups'].delete(key)
+          end
         end
 
-        @after_name_changed.each do |block|
-          block.call(group)
-        end
-      end
-      group.after_site_added do |group, site|
-        @after_site_added.each do |block|
-          block.call(group, site)
-        end
-      end
-      group.after_username_changed do |group, site|
-        @after_username_changed.each do |block|
-          block.call(group, site)
-        end
-      end
-      group.after_password_changed do |group, site|
-        @after_password_changed.each do |block|
-          block.call(group, site)
-        end
-      end
-      group.after_site_removed do |group, site|
-        @after_site_removed.each do |block|
-          block.call(group, site)
-        end
-      end
-      group.after_group_added do |group, subgroup|
-        @after_group_added.each do |block|
-          block.call(group, subgroup)
-        end
-      end
-      group.after_group_removed do |group, subgroup|
-        @after_group_removed.each do |block|
-          block.call(group, subgroup)
-        end
+        trigger(Event.new(self, 'change', group_event))
       end
     end
   end

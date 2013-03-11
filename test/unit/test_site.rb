@@ -10,6 +10,12 @@ class TestSite < Test::Unit::TestCase
     assert_equal "Enterprise", site.name
   end
 
+  test "name setter" do
+    site = new_site("Enterprise", "picard", "livingston")
+    site.name = "NCC1701D"
+    assert_equal "NCC1701D", site.name
+  end
+
   test "username" do
     site = new_site("Enterprise", "picard", "livingston")
     assert_equal "picard", site.username
@@ -107,27 +113,49 @@ class TestSite < Test::Unit::TestCase
     end
   end
 
-  test "after_password_changed callback" do
+  test "name change event" do
     site = new_site("Enterprise", "picard", "livingston")
 
     called = false
-    site.after_password_changed do |affected_site|
+    site.after_event do |event|
       called = true
-      assert_same site, affected_site
-      assert_equal "crusher", affected_site.password
+      assert_equal 'change', event.name
+      assert_same site, event.owner
+      assert_equal 'name', event.attribute_name
+      assert_equal 'Enterprise', event.previous_value
+      assert_equal 'NCC1701D', event.new_value
+    end
+    site.name = "NCC1701D"
+    assert called
+  end
+
+  test "password changed callback" do
+    site = new_site("Enterprise", "picard", "livingston")
+
+    called = false
+    site.after_event do |event|
+      called = true
+      assert_same site, event.owner
+      assert_equal 'change', event.name
+      assert_equal 'password', event.attribute_name
+      assert_equal 'livingston', event.previous_value
+      assert_equal 'crusher', event.new_value
     end
     site.password = "crusher"
     assert called
   end
 
-  test "after_username_changed callback" do
+  test "username changed callback" do
     site = new_site("Enterprise", "picard", "livingston")
 
     called = false
-    site.after_username_changed do |affected_site|
+    site.after_event do |event|
       called = true
-      assert_same site, affected_site
-      assert_equal "jean_luc", affected_site.username
+      assert_same site, event.owner
+      assert_equal 'change', event.name
+      assert_equal 'username', event.attribute_name
+      assert_equal 'picard', event.previous_value
+      assert_equal 'jean_luc', event.new_value
     end
     site.username = "jean_luc"
     assert called

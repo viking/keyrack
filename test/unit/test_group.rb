@@ -330,9 +330,7 @@ class TestGroup < Test::Unit::TestCase
     }
     group = Keyrack::Group.new
     called = false
-    group.after_site_added { |_, _| called = true }
-    group.after_username_changed { |_, _| called = true }
-    group.after_password_changed { |_, _| called = true }
+    group.after_event { |_| called = true }
     group.load(hash)
     assert !called
   end
@@ -358,29 +356,34 @@ class TestGroup < Test::Unit::TestCase
     assert_equal ["Klingon"], group.group_names
   end
 
-  test "after_name_changed callback" do
+  test "name changed callback" do
     group = new_group("Starships")
 
     called = false
-    group.after_name_changed do |affected_group|
+    group.after_event do |event|
       called = true
-      assert_same group, affected_group
-      assert_equal "Galaxy class starships", affected_group.name
+      assert_same group, event.owner
+      assert_equal 'change', event.name
+      assert_equal 'name', event.attribute_name
+      assert_equal 'Starships', event.previous_value
+      assert_equal 'Galaxy class starships', event.new_value
     end
-    group.name = "Galaxy class starships"
+    group.name = 'Galaxy class starships'
     assert called
   end
 
-  test "after_name_changed callback for subgroup" do
+  test "name changed callback for subgroup" do
     group = new_group("Starships")
     subgroup = new_group("Galaxy class")
     group.add_group(subgroup)
 
     called = false
-    group.after_name_changed do |affected_group|
+    group.after_event do |event|
       called = true
-      assert_same subgroup, affected_group
-      assert_equal "Excelsior class", affected_group.name
+      assert_same group, event.owner
+      assert_equal 'change', event.name
+      assert_not_nil event.parent
+      assert_same subgroup, event.parent.owner
     end
     subgroup.name = "Excelsior class"
     assert called
@@ -395,53 +398,58 @@ class TestGroup < Test::Unit::TestCase
     assert_equal({'Soyuz class' => subgroup}, group.groups)
   end
 
-  test "after_site_added callback" do
+  test "site added callback" do
     group = new_group("Starships")
     site = new_site("Enterprise", "picard", "livingston")
 
     called = false
-    group.after_site_added do |affected_group, added_site|
+    group.after_event do |event|
       called = true
-      assert_same group, affected_group
-      assert_same site, added_site
+      assert_same group, event.owner
+      assert_equal 'add', event.name
+      assert_equal 'sites', event.collection_name
+      assert_same site, event.object
     end
     group.add_site(site)
     assert called
   end
 
-  test "after_site_added callback for subgroup" do
+  test "site added callback for subgroup" do
     group = new_group("Starships")
     subgroup = new_group("Galaxy class")
     group.add_group(subgroup)
     site = new_site("Enterprise", "picard", "livingston")
 
     called = false
-    group.after_site_added do |affected_group, added_site|
+    group.after_event do |event|
       called = true
-      assert_same subgroup, affected_group
-      assert_same site, added_site
+      assert_same group, event.owner
+      assert_equal 'change', event.name
+      assert_not_nil event.parent
+      assert_same subgroup, event.parent.owner
     end
     subgroup.add_site(site)
     assert called
   end
 
-  test "after_username_changed callback" do
+  test "site username changed callback" do
     group = new_group("Starships")
     site = new_site("Enterprise", "picard", "livingston")
     group.add_site(site)
 
     called = false
-    group.after_username_changed do |affected_group, affected_site|
+    group.after_event do |event|
       called = true
-      assert_same group, affected_group
-      assert_same site, affected_site
-      assert_equal "jean_luc", affected_site.username
+      assert_same group, event.owner
+      assert_equal 'change', event.name
+      assert_not_nil event.parent
+      assert_same site, event.parent.owner
     end
     site.username = "jean_luc"
     assert called
   end
 
-  test "after_username_changed callback for hash-loaded group" do
+  test "site username changed callback for hash-loaded group" do
     group = new_group({
       'name' => "Starships",
       'sites' => [
@@ -456,17 +464,18 @@ class TestGroup < Test::Unit::TestCase
     site = group.site(0)
 
     called = false
-    group.after_username_changed do |affected_group, affected_site|
+    group.after_event do |event|
       called = true
-      assert_same group, affected_group
-      assert_same site, affected_site
-      assert_equal "jean_luc", affected_site.username
+      assert_same group, event.owner
+      assert_equal 'change', event.name
+      assert_not_nil event.parent
+      assert_same site, event.parent.owner
     end
     site.username = "jean_luc"
     assert called
   end
 
-  test "after_username_changed callback for subgroup" do
+  test "site username changed callback for subgroup" do
     group = new_group("Starships")
     subgroup = new_group("Galaxy class")
     group.add_group(subgroup)
@@ -474,26 +483,31 @@ class TestGroup < Test::Unit::TestCase
     subgroup.add_site(site)
 
     called = false
-    group.after_username_changed do |affected_group, affected_site|
+    group.after_event do |event|
       called = true
-      assert_same subgroup, affected_group
-      assert_same site, affected_site
+      assert_same group, event.owner
+      assert_equal 'change', event.name
+      assert_not_nil event.parent
+      assert_same subgroup, event.parent.owner
+      assert_not_nil event.parent.parent
+      assert_same site, event.parent.parent.owner
     end
     site.username = "jean_luc"
     assert called
   end
 
-  test "after_password_changed callback" do
+  test "site password changed callback" do
     group = new_group("Starships")
     site = new_site("Enterprise", "picard", "livingston")
     group.add_site(site)
 
     called = false
-    group.after_password_changed do |affected_group, affected_site|
+    group.after_event do |event|
       called = true
-      assert_same group, affected_group
-      assert_same site, affected_site
-      assert_equal "crusher", affected_site.password
+      assert_same group, event.owner
+      assert_equal 'change', event.name
+      assert_not_nil event.parent
+      assert_same site, event.parent.owner
     end
     site.password = "crusher"
     assert called
@@ -514,17 +528,18 @@ class TestGroup < Test::Unit::TestCase
     site = group.site(0)
 
     called = false
-    group.after_password_changed do |affected_group, affected_site|
+    group.after_event do |event|
       called = true
-      assert_same group, affected_group
-      assert_same site, affected_site
-      assert_equal "crusher", affected_site.password
+      assert_same group, event.owner
+      assert_equal 'change', event.name
+      assert_not_nil event.parent
+      assert_same site, event.parent.owner
     end
     site.password = "crusher"
     assert called
   end
 
-  test "after_password_changed callback for subgroup" do
+  test "site password changed callback for subgroup" do
     group = new_group("Starships")
     subgroup = new_group("Galaxy class")
     group.add_group(subgroup)
@@ -532,31 +547,37 @@ class TestGroup < Test::Unit::TestCase
     subgroup.add_site(site)
 
     called = false
-    group.after_password_changed do |affected_group, affected_site|
+    group.after_event do |event|
       called = true
-      assert_same subgroup, affected_group
-      assert_same site, affected_site
+      assert_same group, event.owner
+      assert_equal 'change', event.name
+      assert_not_nil event.parent
+      assert_same subgroup, event.parent.owner
+      assert_not_nil event.parent.parent
+      assert_same site, event.parent.parent.owner
     end
     site.password = "crusher"
     assert called
   end
 
-  test "after_site_removed callback" do
+  test "site removed callback" do
     group = new_group("Starships")
     site = new_site("Enterprise", "picard", "livingston")
     group.add_site(site)
 
     called = false
-    group.after_site_removed do |affected_group, removed_site|
+    group.after_event do |event|
       called = true
-      assert_same group, affected_group
-      assert_same site, removed_site
+      assert_same group, event.owner
+      assert_equal 'remove', event.name
+      assert_equal 'sites', event.collection_name
+      assert_same site, event.object
     end
     group.remove_site(site)
     assert called
   end
 
-  test "after_site_removed callback for subgroup" do
+  test "site removed callback for subgroup" do
     group = new_group("Starships")
     subgroup = new_group("Galaxy class")
     group.add_group(subgroup)
@@ -564,61 +585,69 @@ class TestGroup < Test::Unit::TestCase
     subgroup.add_site(site)
 
     called = false
-    group.after_site_removed do |affected_group, removed_site|
+    group.after_event do |event|
       called = true
-      assert_same subgroup, affected_group
-      assert_same site, removed_site
+      assert_same group, event.owner
+      assert_equal 'change', event.name
+      assert_not_nil event.parent
+      assert_same subgroup, event.parent.owner
     end
     subgroup.remove_site(site)
     assert called
   end
 
-  test "after_group_added callback" do
+  test "group added callback" do
     group = new_group("Starships")
     subgroup = new_group("Klingon")
 
     called = false
-    group.after_group_added do |affected_group, added_group|
+    group.after_event do |event|
       called = true
-      assert_same group, affected_group
-      assert_same subgroup, added_group
+      assert_same group, event.owner
+      assert_equal 'add', event.name
+      assert_equal 'groups', event.collection_name
+      assert_same subgroup, event.object
     end
     group.add_group(subgroup)
     assert called
   end
 
-  test "after_group_added callback for subgroup" do
+  test "group added callback for subgroup" do
     group = new_group("Starships")
     subgroup = new_group("Galaxy class")
     group.add_group(subgroup)
     subsubgroup = new_group("Flagships")
 
     called = false
-    group.after_group_added do |affected_group, added_group|
+    group.after_event do |event|
       called = true
-      assert_same subgroup, affected_group
-      assert_same subsubgroup, added_group
+      assert_same group, event.owner
+      assert_equal 'change', event.name
+      assert_not_nil event.parent
+      assert_same subgroup, event.parent.owner
     end
     subgroup.add_group(subsubgroup)
     assert called
   end
 
-  test "after_group_removed callback" do
+  test "group removed callback" do
     group = new_group("Starships")
     subgroup = new_group("Klingon")
     group.add_group(subgroup)
 
     called = false
-    group.after_group_removed do |affected_group, removed_group|
+    group.after_event do |event|
       called = true
-      assert_same group, affected_group
-      assert_same subgroup, removed_group
+      assert_same group, event.owner
+      assert_equal 'remove', event.name
+      assert_equal 'groups', event.collection_name
+      assert_same subgroup, event.object
     end
     group.remove_group("Klingon")
     assert called
   end
 
-  test "after_group_removed callback for subgroup" do
+  test "group removed callback for subgroup" do
     group = new_group("Starships")
     subgroup = new_group("Galaxy class")
     group.add_group(subgroup)
@@ -626,10 +655,12 @@ class TestGroup < Test::Unit::TestCase
     subgroup.add_group(subsubgroup)
 
     called = false
-    group.after_group_removed do |affected_group, removed_group|
+    group.after_event do |event|
       called = true
-      assert_same subgroup, affected_group
-      assert_same subsubgroup, removed_group
+      assert_same group, event.owner
+      assert_equal 'change', event.name
+      assert_not_nil event.parent
+      assert_same subgroup, event.parent.owner
     end
     subgroup.remove_group("Flagships")
     assert called

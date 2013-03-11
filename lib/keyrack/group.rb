@@ -232,6 +232,11 @@ module Keyrack
 
     def add_group_hooks_for(group)
       group.after_name_changed do |group|
+        key, value = self.groups.find { |(k, v)| v.equal?(group) }
+        if key
+          self['groups'][group.name] = self['groups'].delete(key)
+        end
+
         @after_name_changed.each do |block|
           block.call(group)
         end

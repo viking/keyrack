@@ -386,6 +386,15 @@ class TestGroup < Test::Unit::TestCase
     assert called
   end
 
+  test "group updates subgroup names after subgroup's name changes" do
+    group = new_group("Starships")
+    subgroup = new_group("Galaxy class")
+    group.add_group(subgroup)
+    assert_equal({'Galaxy class' => subgroup}, group.groups)
+    subgroup.name = 'Soyuz class'
+    assert_equal({'Soyuz class' => subgroup}, group.groups)
+  end
+
   test "after_site_added callback" do
     group = new_group("Starships")
     site = new_site("Enterprise", "picard", "livingston")

@@ -77,6 +77,9 @@ module Keyrack
     end
 
     def add_group_hooks_for(group)
+      group.after_name_changed do |affected_group|
+        @dirty = true
+      end
       group.after_site_added do |affected_group, added_site|
         @dirty = true
       end

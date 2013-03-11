@@ -149,6 +149,17 @@ class TestDatabase < Test::Unit::TestCase
       assert @database.dirty?
     end
 
+    database_test "database is dirty after changing group name", reload do
+      assert !@database.dirty?
+      group = Keyrack::Group.new('Foo')
+      @database.top_group.add_group(group)
+      assert @database.save(@key)
+
+      assert !@database.dirty?
+      group.name = "Bar"
+      assert @database.dirty?
+    end
+
     database_test "large number of entries", reload do
       site_name = "abcdefg"; username = "1234567"; password = "zyxwvut" * 2
       500.times do |i|

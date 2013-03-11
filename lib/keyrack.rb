@@ -7,6 +7,7 @@ require 'highline'
 require 'clipboard'
 require 'scrypty'
 require 'fileutils'
+require 'digest'
 
 module Keyrack
 end

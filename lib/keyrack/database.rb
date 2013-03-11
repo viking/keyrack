@@ -9,8 +9,8 @@ module Keyrack
       @encrypt_options = DEFAULT_ENCRYPT_OPTIONS.merge(encrypt_options)
       @decrypt_options = DEFAULT_DECRYPT_OPTIONS.merge(decrypt_options)
       @store = store
-      @password = password
-      @database = decrypt
+      @password = password_hash(password)
+      @database = decrypt(password)
       setup_hooks
     end
 
@@ -27,7 +27,7 @@ module Keyrack
     end
 
     def save(password)
-      if password == @password
+      if password_hash(password) == @password
         @store.write(Scrypty.encrypt(@database.to_yaml, password,
           *@encrypt_options.values_at(:maxmem, :maxmemfrac, :maxtime)))
         @dirty = false
@@ -38,8 +38,8 @@ module Keyrack
     end
 
     def change_password(current_password, new_password)
-      if current_password == @password
-        @password = new_password
+      if password_hash(current_password) == @password
+        @password = password_hash(new_password)
         true
       else
         false
@@ -48,10 +48,17 @@ module Keyrack
 
     private
 
-    def decrypt
+    def password_hash(password)
+      # Avoid storing the database password as-is in memory, but don't
+      # spend too much effort obfuscating it.
+      sha256 = Digest::SHA256.new
+      sha256.digest "#{password}-#{$$}"
+    end
+
+    def decrypt(password)
       data = @store.read
       if data
-        str = Scrypty.decrypt(data, @password,
+        str = Scrypty.decrypt(data, password,
           *@decrypt_options.values_at(:maxmem, :maxmemfrac, :maxtime))
         hash = YAML.load(str)
         migrated_hash = Migrator.run(hash)

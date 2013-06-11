@@ -62,7 +62,8 @@ class TestConsole < Test::Unit::TestCase
     @highline.expects(:say).with("Commands: [n]ew [e]dit [g]roup [m]ode [q]uit")
 
     @highline.expects(:ask).yields(mock { expects(:in=).with(%w{n q m 1 2 3 e g}) }).returns('1')
-    @highline.expects(:color).with('secret', :cyan).returns('cyan[secret]').in_sequence(seq)
+    @highline.expects(:color).with('secret', instance_of(Symbol)).
+      returns('secret').in_sequence(seq)
     question = mock do
       expects(:echo=).with(false)
       if HighLine::SystemExtensions::CHARACTER_MODE != 'stty'
@@ -71,7 +72,7 @@ class TestConsole < Test::Unit::TestCase
       end
     end
     @highline.expects(:ask).
-      with('Here you go: cyan[secret]. Done? ').
+      with('Here you go: secret. Done? ').
       yields(question).
       returns('')
 
@@ -141,7 +142,8 @@ class TestConsole < Test::Unit::TestCase
     blargh = stub('Blargh group')
     @top_group.stubs(:group).with('Blargh').returns(blargh)
 
-    @highline.stubs(:color).with('Blargh', :green).returns('Blargh')
+    @highline.stubs(:color).with('Blargh', instance_of(Symbol)).
+      returns('Blargh')
     @highline.expects(:say).with("=== Keyrack Main Menu ===")
     @highline.expects(:say).with("1. Blargh")
     @highline.expects(:say).with("2. Twitter [tweeb]")
@@ -165,7 +167,8 @@ class TestConsole < Test::Unit::TestCase
       :group_names => []
     })
 
-    @highline.expects(:color).with("Foo", :green).returns("Foo")
+    @highline.expects(:color).with("Foo", instance_of(Symbol)).
+      returns("Foo")
     @highline.expects(:say).with("======== Foo =========")
     @highline.expects(:say).with("1. Facebook [username]")
     @highline.expects(:say).with("Mode: copy")
@@ -203,10 +206,12 @@ class TestConsole < Test::Unit::TestCase
     @highline.expects(:ask).with("Username: ").returns("bar").in_sequence(seq)
     @highline.expects(:ask).with("Generate password? [ync] ").returns("y").in_sequence(seq)
     Keyrack::Utils.expects(:generate_password).returns('foobar').in_sequence(seq)
-    @highline.expects(:color).with('foobar', :cyan).returns('foobar').in_sequence(seq)
+    @highline.expects(:color).with('foobar', instance_of(Symbol)).
+      returns('foobar').in_sequence(seq)
     @highline.expects(:ask).with("Generated foobar.  Sound good? [ync] ").returns("n").in_sequence(seq)
     Keyrack::Utils.expects(:generate_password).returns('foobar').in_sequence(seq)
-    @highline.expects(:color).with('foobar', :cyan).returns('foobar').in_sequence(seq)
+    @highline.expects(:color).with('foobar', instance_of(Symbol)).
+      returns('foobar').in_sequence(seq)
     @highline.expects(:ask).with("Generated foobar.  Sound good? [ync] ").returns("y").in_sequence(seq)
     assert_equal({:site => "Foo", :username => "bar", :password => "foobar"}, @console.get_new_entry)
   end
@@ -228,7 +233,8 @@ class TestConsole < Test::Unit::TestCase
     @highline.expects(:ask).with("Username: ").returns("bar").in_sequence(seq)
     @highline.expects(:ask).with("Generate password? [ync] ").returns("y").in_sequence(seq)
     Keyrack::Utils.expects(:generate_password).returns('foobar').in_sequence(seq)
-    @highline.expects(:color).with('foobar', :cyan).returns('foobar').in_sequence(seq)
+    @highline.expects(:color).with('foobar', instance_of(Symbol)).
+      returns('foobar').in_sequence(seq)
     @highline.expects(:ask).with("Generated foobar.  Sound good? [ync] ").returns('c').in_sequence(seq)
     @highline.expects(:ask).with("Password: ").yields(mock { expects(:echo=).with(false) }).returns("baz").in_sequence(seq)
     @highline.expects(:ask).with("Password (again): ").yields(mock { expects(:echo=).with(false) }).returns("baz").in_sequence(seq)
@@ -291,6 +297,23 @@ class TestConsole < Test::Unit::TestCase
     seq << @highline.expects(:say).with("c. Cancel")
     seq << @highline.expects(:ask).yields(mock { expects(:in=).with(%w{c 1 2 3}) }).returns('1')
     assert_equal({:site => @twitter}, @console.choose_entry_to_edit(@top_group))
+  end
+
+  test "choose group to edit" do
+    seq = SequenceHelper.new("editing")
+    @top_group.expects(:group_names).returns(%w{Foo})
+    @highline.expects(:color).with("Choose entry", instance_of(Symbol)).
+      returns("Choose entry")
+    @highline.expects(:color).with("Foo", instance_of(Symbol)).
+      returns("Foo")
+    seq << @highline.expects(:say).with('=== Choose entry ===')
+    seq << @highline.expects(:say).with("1. Foo")
+    seq << @highline.expects(:say).with("2. Twitter [tweeb]")
+    seq << @highline.expects(:say).with("3. Google [catfan]")
+    seq << @highline.expects(:say).with("4. Google [dogfan]")
+    seq << @highline.expects(:say).with("c. Cancel")
+    seq << @highline.expects(:ask).yields(mock { expects(:in=).with(%w{c 1 2 3 4}) }).returns('1')
+    assert_equal({:group => "Foo"}, @console.choose_entry_to_edit(@top_group))
   end
 
   test "choose entry to edit with cancel" do
@@ -399,13 +422,15 @@ class TestConsole < Test::Unit::TestCase
   end
 
   test "confirm overwrite entry" do
-    @highline.expects(:color).with("Twitter [tweeb]", :cyan).returns("Twitter [tweeb]")
+    @highline.expects(:color).with("Twitter [tweeb]", instance_of(Symbol)).
+      returns("Twitter [tweeb]")
     @highline.expects(:agree).with("There's already an entry for: Twitter [tweeb]. Do you want to overwrite it? [yn] ").returns(true)
     assert_equal true, @console.confirm_overwrite_entry(@twitter)
   end
 
   test "confirm delete entry" do
-    @highline.expects(:color).with("Twitter [tweeb]", :red).returns("Twitter [tweeb]")
+    @highline.expects(:color).with("Twitter [tweeb]", instance_of(Symbol)).
+      returns("Twitter [tweeb]")
     @highline.expects(:agree).with("You're about to delete Twitter [tweeb]. Are you sure? [yn] ").returns(true)
     assert_equal true, @console.confirm_delete_entry(@twitter)
   end

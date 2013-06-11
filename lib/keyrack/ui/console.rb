@@ -17,43 +17,10 @@ module Keyrack
         dirty = options[:dirty]
         at_top = options[:at_top]
 
-        # Collect the selections
-        selections = []
-        max_width = 0
         choices = {'n' => :new, 'q' => :quit, 'm' => :mode}
-        selection_index = 1
-        current_group.group_names.each do |group_name|
-          choices[selection_index.to_s] = {:group => group_name}
-
-          text = @highline.color(group_name, :green)
-          width = group_name.length
-          selections.push({:width => width, :text => text})
-
-          max_width = width if width > max_width
-          selection_index += 1
-        end
-
-        current_group.sites.each do |site|
-          choices[selection_index.to_s] = {:site => site}
-
-          text = "%s [%s]" % [site.name, site.username]
-          width = text.length
-          selections.push({:width => width, :text => text})
-
-          max_width = width if width > max_width
-          selection_index += 1
-        end
-
-        title = {}
-        if at_top
-          title[:text] = @highline.color("Keyrack Main Menu", :yellow)
-          title[:width] = 17
-        else
-          title[:text] = @highline.color(current_group.name, :green)
-          title[:width] = current_group.name.length
-        end
-
-        columnize_menu(selections, max_width, title)
+        entry_choices = print_entries(current_group,
+          at_top ? "Keyrack Main Menu" : current_group.name)
+        choices.update(entry_choices)
 
         @highline.say("Mode: #{@mode}")
         commands = "Commands: [n]ew"
@@ -166,27 +133,8 @@ module Keyrack
 
       def choose_entry_to_edit(group)
         choices = {'c' => :cancel}
-        index = 1
-
-        title = {
-          :text => @highline.color("Choose entry", :cyan),
-          :width => 12
-        }
-
-        selections = []
-        max_width = 0
-        group.sites.each_with_index do |site|
-          choices[index.to_s] = {:site => site}
-
-          text = "%s [%s]" % [site.name, site.username]
-          width = text.length
-          selections.push({:text => text, :width => width})
-          max_width = width if width > max_width
-
-          index += 1
-        end
-
-        columnize_menu(selections, max_width, title)
+        entry_choices = print_entries(group, "Choose entry")
+        choices.update(entry_choices)
 
         @highline.say("c. Cancel")
 
@@ -280,6 +228,44 @@ module Keyrack
           @highline.say("Passwords didn't match. Try again!")
         end
         password
+      end
+
+      private
+
+      def print_entries(group, title)
+        selections = []
+        max_width = 0
+        choices = {}
+        selection_index = 1
+        group.group_names.each do |group_name|
+          choices[selection_index.to_s] = {:group => group_name}
+
+          text = @highline.color(group_name, :green)
+          width = group_name.length
+          selections.push({:width => width, :text => text})
+
+          max_width = width if width > max_width
+          selection_index += 1
+        end
+
+        group.sites.each do |site|
+          choices[selection_index.to_s] = {:site => site}
+
+          text = "%s [%s]" % [site.name, site.username]
+          width = text.length
+          selections.push({:width => width, :text => text})
+
+          max_width = width if width > max_width
+          selection_index += 1
+        end
+
+        title = {
+          :text => @highline.color(title, :yellow),
+          :width => title.length
+        }
+
+        columnize_menu(selections, max_width, title)
+        choices
       end
 
       def columnize_menu(selections, max_width, title = nil)

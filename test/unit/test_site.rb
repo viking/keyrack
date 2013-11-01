@@ -171,6 +171,16 @@ class TestSite < Test::Unit::TestCase
     assert_equal expected, site.to_yaml
   end
 
+  test "to_h" do
+    site = new_site("Enterprise", "picard", "livingston")
+    expected = {
+      'name' => 'Enterprise',
+      'username' => 'picard',
+      'password' => 'livingston'
+    }
+    assert_equal expected, site.to_h
+  end
+
   test "sites with same name and username are equal" do
     site_1 = new_site("Enterprise", "picard", "livingston")
     site_2 = new_site("Enterprise", "picard", "crusher")

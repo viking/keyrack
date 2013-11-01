@@ -84,8 +84,11 @@ class TestGroup < Test::Unit::TestCase
     subgroup = new_group("Klingon")
     group.add_group(subgroup)
 
-    expected = {"Klingon" => {'name' => "Klingon", 'sites' => [], 'groups' => {}}}
-    assert_equal(expected, group.groups)
+    assert_equal 1, group.groups.length
+    group = group.group('Klingon')
+    assert_equal 'Klingon', group.name
+    assert_equal [], group.sites
+    assert_equal({}, group.groups)
   end
 
   test "adding already existing group raises error" do
@@ -143,16 +146,15 @@ class TestGroup < Test::Unit::TestCase
         }
       }
     }
-    group = new_group(hash)
-    assert_equal "Starships", group.name
-    assert_equal hash['sites'], group.sites
-    assert_equal hash['groups'], group.groups
-
-    group = Keyrack::Group.new
-    group.load(hash)
-    assert_equal "Starships", group.name
-    assert_equal hash['sites'], group.sites
-    assert_equal hash['groups'], group.groups
+    values = [new_group(hash), Keyrack::Group.new]
+    values[1].load(hash)
+    values.each do |group|
+      assert_equal "Starships", group.name
+      assert_equal 1, group.sites.length
+      assert_kind_of Keyrack::Site, group.site(0)
+      assert_equal 1, group.groups.length
+      assert_kind_of Keyrack::Group, group.group('Klingon')
+    end
   end
 
   test "loading group from hash with missing name" do
@@ -699,5 +701,40 @@ class TestGroup < Test::Unit::TestCase
       }
     }.to_yaml
     assert_equal expected, group.to_yaml
+  end
+
+  test "to_h" do
+    group = new_group("Starships")
+    site = new_site("Enterprise", "picard", "livingston")
+    group.add_site(site)
+    subgroup = new_group("Klingon")
+    subsite = new_site("Bortas", "gowron", "bat'leth")
+    subgroup.add_site(subsite)
+    group.add_group(subgroup)
+
+    expected = {
+      'name' => "Starships",
+      'sites' => [
+        {
+          'name' => "Enterprise",
+          'username' => 'picard',
+          'password' => 'livingston'
+        }
+      ],
+      'groups' => {
+        "Klingon" => {
+          'name' => "Klingon",
+          'sites' => [
+            {
+              'name' => "Bortas",
+              'username' => 'gowron',
+              'password' => "bat'leth"
+            }
+          ],
+          'groups' => {}
+        }
+      }
+    }
+    assert_equal expected, group.to_h
   end
 end

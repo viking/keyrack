@@ -10,16 +10,16 @@ module Keyrack
       @decrypt_options = DEFAULT_DECRYPT_OPTIONS.merge(decrypt_options)
       @store = store
       @password = password_hash(password)
-      @database = decrypt(password)
+      @attributes = decrypt(password)
       setup_hooks
     end
 
     def version
-      @database['version']
+      @attributes['version']
     end
 
     def top_group
-      @database['groups']['top']
+      @attributes['groups']['top']
     end
 
     def dirty?
@@ -28,7 +28,7 @@ module Keyrack
 
     def save(password)
       if password_hash(password) == @password
-        @store.write(Scrypty.encrypt(@database.to_yaml, password,
+        @store.write(Scrypty.encrypt(JSON.generate(self.to_h), password,
           *@encrypt_options.values_at(:maxmem, :maxmemfrac, :maxtime)))
         @dirty = false
         true
@@ -46,6 +46,15 @@ module Keyrack
       end
     end
 
+    def to_h
+      hash = @attributes.dup
+      hash['groups'] = hash['groups'].inject({}) do |hash2, (key, value)|
+        hash2[key] = value.to_h
+        hash2
+      end
+      hash
+    end
+
     private
 
     def password_hash(password)
@@ -60,7 +69,14 @@ module Keyrack
       if data
         str = Scrypty.decrypt(data, password,
           *@decrypt_options.values_at(:maxmem, :maxmemfrac, :maxtime))
-        hash = YAML.load(str)
+
+        hash =
+          if str[0..3] == "---\n"
+            YAML.load(str)
+          else
+            JSON.parse(str)
+          end
+
         migrated_hash = Migrator.run(hash)
         if !migrated_hash.equal?(hash)
           hash = migrated_hash
@@ -78,7 +94,7 @@ module Keyrack
     end
 
     def setup_hooks
-      @database['groups'].each_pair do |group_name, group|
+      @attributes['groups'].each_pair do |group_name, group|
         add_group_hooks_for(group)
       end
     end

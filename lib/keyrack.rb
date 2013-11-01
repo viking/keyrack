@@ -1,5 +1,6 @@
 require 'openssl'
 require 'yaml'
+require 'json'
 require 'optparse'
 require 'securerandom'
 require 'net/scp'

@@ -1,5 +1,5 @@
 module Keyrack
-  class Site < Hash
+  class Site
     def initialize(*args)
       if args[0].is_a?(Hash)
         hash = args[0]
@@ -21,12 +21,14 @@ module Keyrack
         if !hash['password'].is_a?(String)
           raise ArgumentError, "name is not a String"
         end
-        self.update(hash)
       else
-        self['name'] = args[0]
-        self['username'] = args[1]
-        self['password'] = args[2]
+        hash = {
+          'name' => args[0],
+          'username' => args[1],
+          'password' => args[2]
+        }
       end
+      @attributes = hash
 
       @event_hooks = []
     end
@@ -34,15 +36,15 @@ module Keyrack
     def change_attribute(name, value)
       event = Event.new(self, 'change')
       event.attribute_name = name
-      event.previous_value = self[name]
+      event.previous_value = @attributes[name]
       event.new_value = value
 
-      self[name] = value
+      @attributes[name] = value
       trigger(event)
     end
 
     def name
-      self['name']
+      @attributes['name']
     end
 
     def name=(name)
@@ -50,7 +52,7 @@ module Keyrack
     end
 
     def username
-      self['username']
+      @attributes['username']
     end
 
     def username=(username)
@@ -58,7 +60,7 @@ module Keyrack
     end
 
     def password
-      self['password']
+      @attributes['password']
     end
 
     def password=(password)
@@ -70,7 +72,7 @@ module Keyrack
     end
 
     def encode_with(coder)
-      coder.represent_map(nil, self)
+      coder.represent_map(nil, @attributes)
     end
 
     def ==(other)
@@ -79,6 +81,10 @@ module Keyrack
       else
         super
       end
+    end
+
+    def to_h
+      @attributes.clone
     end
 
     private

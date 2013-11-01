@@ -1,11 +1,13 @@
 module Keyrack
-  class Group < Hash
+  class Group
     def initialize(arg = nil)
+      @attributes = {}
+
       case arg
       when String
-        self['name'] = arg
-        self['sites'] = []
-        self['groups'] = {}
+        @attributes['name'] = arg
+        @attributes['sites'] = []
+        @attributes['groups'] = {}
       when Hash
         load(arg)
       when nil
@@ -24,7 +26,7 @@ module Keyrack
       if !hash['name'].is_a?(String)
         raise ArgumentError, "name is not a String"
       end
-      self['name'] = hash['name']
+      @attributes['name'] = hash['name']
 
       if !hash.has_key?('sites')
         raise ArgumentError, "hash is missing the 'sites' key"
@@ -40,7 +42,7 @@ module Keyrack
         raise ArgumentError, "groups is not a Hash"
       end
 
-      self['sites'] = []
+      @attributes['sites'] = []
       hash['sites'].each_with_index do |site_hash, site_index|
         if !site_hash.is_a?(Hash)
           raise ArgumentError, "site #{site_index} is not a Hash"
@@ -54,7 +56,7 @@ module Keyrack
         end
       end
 
-      self['groups'] = {}
+      @attributes['groups'] = {}
       hash['groups'].each_pair do |group_name, group_hash|
         if !group_name.is_a?(String)
           raise ArgumentError, "group key is not a String"
@@ -82,15 +84,15 @@ module Keyrack
     def change_attribute(name, value)
       event = Event.new(self, 'change')
       event.attribute_name = name
-      event.previous_value = self[name]
+      event.previous_value = @attributes[name]
       event.new_value = value
 
-      self[name] = value
+      @attributes[name] = value
       trigger(event)
     end
 
     def name
-      self['name']
+      @attributes['name']
     end
 
     def name=(name)
@@ -98,11 +100,11 @@ module Keyrack
     end
 
     def sites
-      self['sites']
+      @attributes['sites']
     end
 
     def groups
-      self['groups']
+      @attributes['groups']
     end
 
     def add_site(site)
@@ -169,7 +171,17 @@ module Keyrack
     end
 
     def encode_with(coder)
-      coder.represent_map(nil, self)
+      coder.represent_map(nil, @attributes)
+    end
+
+    def to_h
+      hash = @attributes.dup
+      hash['sites'] = hash['sites'].collect(&:to_h)
+      hash['groups'] = hash['groups'].inject({}) do |hash2, (key, value)|
+        hash2[key] = value.to_h
+        hash2
+      end
+      hash
     end
 
     private
@@ -212,9 +224,9 @@ module Keyrack
     def add_group_hooks_for(group)
       group.after_event do |group_event|
         if group_event.name == 'change' && group_event.attribute_name == 'name'
-          key, value = self.groups.find { |(k, v)| v.equal?(group) }
+          key, value = groups.find { |(k, v)| v.equal?(group) }
           if key
-            self['groups'][group.name] = self['groups'].delete(key)
+            groups[group.name] = groups.delete(key)
           end
         end
 

@@ -170,10 +170,6 @@ module Keyrack
       @after_event << block
     end
 
-    def encode_with(coder)
-      coder.represent_map(nil, @attributes)
-    end
-
     def to_h
       hash = @attributes.dup
       hash['sites'] = hash['sites'].collect(&:to_h)

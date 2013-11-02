@@ -71,10 +71,6 @@ module Keyrack
       @event_hooks << block
     end
 
-    def encode_with(coder)
-      coder.represent_map(nil, @attributes)
-    end
-
     def ==(other)
       if other.instance_of?(Site)
         other.name == name && other.username == username

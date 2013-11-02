@@ -37,8 +37,8 @@ class TestDatabase < Test::Unit::TestCase
 
   test "encrypting database" do
     encrypted_data = File.read(@path)
-    yaml = decrypt(encrypted_data, @key)
-    data = YAML.load(yaml)
+    json = decrypt(encrypted_data, @key)
+    data = JSON.parse(json)
     expected = {
       'groups' => {
         'top' => {
@@ -60,6 +60,18 @@ class TestDatabase < Test::Unit::TestCase
 
   test "auto-migrating database from version 3" do
     store = Keyrack::Store['filesystem'].new('path' => fixture_path('database-3.dat'))
+    database = Keyrack::Database.new('foobar', store)
+    assert database.dirty?
+  end
+
+  test "auto-converting from YAML to JSON" do
+    store = Keyrack::Store['filesystem'].new('path' => fixture_path('database-yaml.dat'))
+    database = Keyrack::Database.new('foobar', store)
+    assert database.dirty?
+  end
+
+  test "auto-converting from 1.9.2 YAML to JSON" do
+    store = Keyrack::Store['filesystem'].new('path' => fixture_path('database-yaml-192.dat'))
     database = Keyrack::Database.new('foobar', store)
     assert database.dirty?
   end

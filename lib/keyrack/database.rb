@@ -1,7 +1,7 @@
 module Keyrack
   class Database
     DEFAULT_ENCRYPT_OPTIONS = { :maxmem => 0, :maxmemfrac => 0.125, :maxtime => 5.0 }
-    DEFAULT_DECRYPT_OPTIONS = { :maxmem => 0, :maxmemfrac => 0.250, :maxtime => 10.0 }
+    DEFAULT_DECRYPT_OPTIONS = { :maxmem => 0, :maxmemfrac => 0.500, :maxtime => 20.0 }
     VERSION = 4
 
     def initialize(password, store, encrypt_options = {}, decrypt_options = {})
@@ -71,8 +71,9 @@ module Keyrack
           *@decrypt_options.values_at(:maxmem, :maxmemfrac, :maxtime))
 
         hash =
-          if str[0..3] == "---\n"
-            YAML.load(str)
+          if str =~ /^---\s*\n/
+            @dirty = true
+            YAML.load(str.gsub(/!map:Keyrack::\w+/, "!map"))
           else
             JSON.parse(str)
           end

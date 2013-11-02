@@ -668,41 +668,6 @@ class TestGroup < Test::Unit::TestCase
     assert called
   end
 
-  test "to_yaml" do
-    group = new_group("Starships")
-    site = new_site("Enterprise", "picard", "livingston")
-    group.add_site(site)
-    subgroup = new_group("Klingon")
-    subsite = new_site("Bortas", "gowron", "bat'leth")
-    subgroup.add_site(subsite)
-    group.add_group(subgroup)
-
-    expected = {
-      'name' => "Starships",
-      'sites' => [
-        {
-          'name' => "Enterprise",
-          'username' => 'picard',
-          'password' => 'livingston'
-        }
-      ],
-      'groups' => {
-        "Klingon" => {
-          'name' => "Klingon",
-          'sites' => [
-            {
-              'name' => "Bortas",
-              'username' => 'gowron',
-              'password' => "bat'leth"
-            }
-          ],
-          'groups' => {}
-        }
-      }
-    }.to_yaml
-    assert_equal expected, group.to_yaml
-  end
-
   test "to_h" do
     group = new_group("Starships")
     site = new_site("Enterprise", "picard", "livingston")

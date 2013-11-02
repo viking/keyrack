@@ -161,16 +161,6 @@ class TestSite < Test::Unit::TestCase
     assert called
   end
 
-  test "serializing to yaml" do
-    site = new_site("Enterprise", "picard", "livingston")
-    expected = {
-      'name' => 'Enterprise',
-      'username' => 'picard',
-      'password' => 'livingston'
-    }.to_yaml
-    assert_equal expected, site.to_yaml
-  end
-
   test "to_h" do
     site = new_site("Enterprise", "picard", "livingston")
     expected = {

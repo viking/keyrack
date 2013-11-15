@@ -190,7 +190,17 @@ module Keyrack
         raise GroupError,
           "site (#{site.name.inspect}, #{site.username.inspect}) already exists"
       end
-      sites << site
+
+      index = sites.length
+      sites.each_with_index do |other, i|
+        if other.name > site.name ||
+              (other.name == site.name && other.username > site.username)
+          index = i
+          break
+        end
+      end
+      sites.insert(index, site)
+
       add_site_hooks_for(site)
     end
 
@@ -201,7 +211,16 @@ module Keyrack
       if groups.has_key?(group.name)
         raise GroupError, "group already exists"
       end
+
+      # wasteful but easy hash ordering
       groups[group.name] = group
+      keys = groups.keys.sort!
+      new_groups = keys.inject({}) do |hsh, key|
+        hsh[key] = groups[key]
+        hsh
+      end
+      @attributes['groups'] = new_groups
+
       add_group_hooks_for(group)
     end
 

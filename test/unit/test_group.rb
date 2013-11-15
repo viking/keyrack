@@ -702,4 +702,24 @@ class TestGroup < Test::Unit::TestCase
     }
     assert_equal expected, group.to_h
   end
+
+  test "auto-sort sites" do
+    group = new_group("Starships")
+    site_1 = new_site("Enterprise", "riker", "minuet")
+    site_2 = new_site("Enterprise", "picard", "livingston")
+    site_3 = new_site("Bortas", "gowron", "bat'leth")
+    group.add_site(site_1)
+    group.add_site(site_2)
+    group.add_site(site_3)
+    assert_equal([site_3, site_2, site_1], group.sites)
+  end
+
+  test "auto-sort groups" do
+    group = new_group("Starships")
+    subgroup_1 = new_group("Klingon")
+    subgroup_2 = new_group("Federation")
+    group.add_group(subgroup_1)
+    group.add_group(subgroup_2)
+    assert_equal([subgroup_2, subgroup_1], group.groups.values)
+  end
 end

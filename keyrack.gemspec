@@ -11,6 +11,7 @@ Gem::Specification.new do |gem|
   gem.description   = %q{Simple password manager with local/remote database storage and scrypt encryption.}
   gem.summary       = %q{Simple password manager}
   gem.homepage      = "http://github.com/viking/keyrack"
+  gem.license       = "MIT"
 
   gem.files         = `git ls-files`.split($/)
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }

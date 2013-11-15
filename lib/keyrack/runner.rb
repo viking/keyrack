@@ -50,17 +50,23 @@ module Keyrack
 
     def main_loop
       group_tree = [@database.top_group]
+      open = false
       loop do
         current_group = group_tree.last
         menu_options = {
           :group => current_group,
           :at_top => at_top?(current_group),
           :dirty => @database.dirty?,
-          :enable_up => group_tree.length > 2
+          :enable_up => group_tree.length > 2,
+          :open => open
         }
         choice = @ui.menu(menu_options)
 
         case choice
+        when :open
+          open = true
+        when :collapse
+          open = false
         when :new
           result = @ui.get_new_entry
           next if result.nil?

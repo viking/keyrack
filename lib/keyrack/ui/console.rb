@@ -16,14 +16,31 @@ module Keyrack
         current_group = options[:group]
         dirty = options[:dirty]
         at_top = options[:at_top]
+        open = options[:open]
 
         choices = {'n' => :new, 'q' => :quit, 'm' => :mode}
-        entry_choices = print_entries(current_group,
-          at_top ? "Keyrack Main Menu" : current_group.name)
+        entry_choices = print_entries({
+          :group => current_group,
+          :title => at_top ? "Keyrack Main Menu" : current_group.name,
+          :open => open
+        })
         choices.update(entry_choices)
 
         @highline.say("Mode: #{@mode}")
-        commands = "Commands: [n]ew"
+        commands = "Commands:"
+
+        if at_top
+          if open
+            choices['c'] = :collapse
+            commands << " [c]ollapse"
+          else
+            choices['o'] = :open
+            commands << " [o]pen"
+          end
+        end
+
+        commands << " [n]ew"
+
         if !current_group.sites.empty?
           choices['e'] = :edit
           commands << " [e]dit"
@@ -133,7 +150,10 @@ module Keyrack
 
       def choose_entry_to_edit(group)
         choices = {'c' => :cancel}
-        entry_choices = print_entries(group, "Choose entry")
+        entry_choices = print_entries({
+          :group => group,
+          :title => "Choose entry"
+        })
         choices.update(entry_choices)
 
         @highline.say("c. Cancel")
@@ -232,31 +252,68 @@ module Keyrack
 
       private
 
-      def print_entries(group, title)
+      def print_entries(options)
+        group = options[:group]
+        title = options[:title]
+        open = options[:open]
+
         selections = []
         max_width = 0
         choices = {}
         selection_index = 1
-        group.group_names.each do |group_name|
-          choices[selection_index.to_s] = {:group => group_name}
 
-          text = @highline.color(group_name, :green)
-          width = group_name.length
-          selections.push({:width => width, :text => text})
+        if open
+          queue = [group]
+          sites = []
+          until queue.empty?
+            group = queue.shift
+            group.group_names.each do |group_name|
+              queue.push(group.group(group_name))
+            end
+            group.sites.each do |site|
+              sites.push([group.name, site])
+            end
+          end
+          sites.sort! do |a, b|
+            if a[1].name == b[1].name
+              a[1].username <=> b[1].username
+            else
+              a[1].name <=> b[1].name
+            end
+          end
 
-          max_width = width if width > max_width
-          selection_index += 1
-        end
+          sites.each do |(group, site)|
+            choices[selection_index.to_s] = {:site => site}
 
-        group.sites.each do |site|
-          choices[selection_index.to_s] = {:site => site}
+            text = "%s [%s] (%s)" % [site.name, site.username, group]
+            width = text.length
+            selections.push({:width => width, :text => text})
 
-          text = "%s [%s]" % [site.name, site.username]
-          width = text.length
-          selections.push({:width => width, :text => text})
+            max_width = width if width > max_width
+            selection_index += 1
+          end
+        else
+          group.group_names.each do |group_name|
+            choices[selection_index.to_s] = {:group => group_name}
 
-          max_width = width if width > max_width
-          selection_index += 1
+            text = @highline.color(group_name, :green)
+            width = group_name.length
+            selections.push({:width => width, :text => text})
+
+            max_width = width if width > max_width
+            selection_index += 1
+          end
+
+          group.sites.each do |site|
+            choices[selection_index.to_s] = {:site => site}
+
+            text = "%s [%s]" % [site.name, site.username]
+            width = text.length
+            selections.push({:width => width, :text => text})
+
+            max_width = width if width > max_width
+            selection_index += 1
+          end
         end
 
         title = {

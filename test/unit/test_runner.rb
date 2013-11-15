@@ -20,7 +20,7 @@ class TestRunner < Test::Unit::TestCase
 
     @menu_options = {
       :group => @top_group, :at_top => true,
-      :enable_up => false, :dirty => false
+      :enable_up => false, :dirty => false, :open => false
     }
   end
 
@@ -46,6 +46,20 @@ class TestRunner < Test::Unit::TestCase
     seq << @console.expects(:get_password).returns('secret')
     seq << Keyrack::Store::Filesystem.expects(:new).with('path' => File.join(@keyrack_dir, 'foo.db')).returns(store)
     seq << Keyrack::Database.expects(:new).with('secret', store).returns(@database)
+    seq << @database.expects(:dirty?).returns(false)
+    seq << @console.expects(:menu).with(@menu_options).returns(:quit)
+
+    runner = Keyrack::Runner.new(["-d", @keyrack_dir])
+  end
+
+  test "opening and collapsing" do
+    setup_config
+
+    seq = SequenceHelper.new('ui sequence')
+    seq << @database.expects(:dirty?).returns(false)
+    seq << @console.expects(:menu).with(@menu_options).returns(:open)
+    seq << @database.expects(:dirty?).returns(false)
+    seq << @console.expects(:menu).with(@menu_options.merge(:open => true)).returns(:collapse)
     seq << @database.expects(:dirty?).returns(false)
     seq << @console.expects(:menu).with(@menu_options).returns(:quit)
 

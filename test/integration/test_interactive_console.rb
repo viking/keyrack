@@ -19,24 +19,30 @@ class TestInteractiveConsole < Test::Unit::TestCase
     end
   end
 
-  def assert_output_matches(pattern, sentinel = "\r\n", timeout = 1)
-    assert_match pattern, get_output(sentinel, timeout)
+  def assert_output_matches(pattern, sentinel = "\r\n", timeout = 1, debug = false)
+    assert_match pattern, get_output(sentinel, timeout, debug)
   end
 
-  def assert_output_equals(expected, timeout = 1)
-    assert_equal expected, get_output(expected, timeout)
+  def assert_output_equals(expected, timeout = 1, debug = false)
+    assert_equal expected, get_output(expected, timeout, debug)
   end
 
-  def get_output(sentinel = "\r\n", timeout = 1)
+  def get_output(sentinel = "\r\n", timeout = 1, debug = false)
     output = ""
     until output.end_with?(sentinel)
       begin
         data = @out.read_nonblock(1)
         output << data
+        if debug
+          $stderr.print(data)
+          $stderr.flush
+        end
         @all_data << data
+      rescue Errno::EIO
+        flunk "Command terminated prematurely."
       rescue IO::WaitReadable
         if IO.select([@out], [], [], timeout).nil?
-          flunk "output timed out"
+          flunk "Output timed out."
         else
           retry
         end
@@ -133,6 +139,63 @@ class TestInteractiveConsole < Test::Unit::TestCase
     menu = get_output("? ", 10)
     assert_match "[q]uit", menu
     send_input "q"
+
+    Process.waitpid(@pid)
+  end
+
+  test "entering in wrong password" do
+    run_keyrack
+
+    assert_output_matches /first time/
+    assert_output_equals "New passphrase: "
+    send_input "secret", true
+
+    assert_output_equals "Confirm passphrase: "
+    send_input "secret", true
+
+    menu = get_output("? ")
+    assert_match /Choose storage type:/, menu
+    assert_match /filesystem/, menu
+    assert_match /ssh/, menu
+    send_input "filesystem"
+
+    menu = get_output("? ")
+    assert_match /Keyrack Main Menu/, menu
+    assert_match /Mode: copy/, menu
+    assert_match "[n]ew", menu
+    send_input "n"
+
+    assert_output_equals "Label: "
+    send_input "Foo"
+    assert_output_equals "Username: "
+    send_input "dude"
+    assert_output_equals "Generate password? [ync] "
+    send_input "n"
+    assert_output_equals "Password: "
+    send_input "secret", true
+    assert_output_equals "Password (again): "
+    send_input "secret", true
+
+    menu = get_output("? ")
+    assert_match /Keyrack Main Menu/, menu
+    assert_match /Mode: copy/, menu
+    assert_match "[s]ave", menu
+    send_input "s"
+
+    assert_output_equals "Keyrack password: "
+    send_input "secret", true
+
+    menu = get_output("? ", 10)
+    assert_match "[q]uit", menu
+    send_input "q"
+
+    Process.waitpid(@pid)
+
+    run_keyrack
+
+    assert_output_equals "Keyrack password: "
+    send_input "wrong", true
+    assert_output_equals "Invalid password.", 10
 
     Process.waitpid(@pid)
   end

@@ -44,8 +44,12 @@ module Keyrack
       end
 
       store = Store[@options['store']['type']].new(@options['store'].reject { |k, _| k == 'type' })
-      @database = Database.new(password, store)
-      main_loop
+      begin
+        @database = Database.new(password, store)
+        main_loop
+      rescue Scrypty::IncorrectPasswordError
+        @ui.display_invalid_password_notice
+      end
     end
 
     def main_loop

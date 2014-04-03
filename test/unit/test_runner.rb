@@ -52,6 +52,21 @@ class TestRunner < Test::Unit::TestCase
     runner = Keyrack::Runner.new(["-d", @keyrack_dir])
   end
 
+  test "console startup for existing database with wrong password" do
+    setup_config
+
+    store = mock('filesystem store')
+    Keyrack::UI::Console.expects(:new).returns(@console)
+
+    seq = SequenceHelper.new('ui sequence')
+    seq << @console.expects(:get_password).returns('secret')
+    seq << Keyrack::Store::Filesystem.expects(:new).with('path' => File.join(@keyrack_dir, 'foo.db')).returns(store)
+    seq << Keyrack::Database.expects(:new).with('secret', store).raises(Scrypty::IncorrectPasswordError)
+    seq << @console.expects(:display_invalid_password_notice)
+
+    runner = Keyrack::Runner.new(["-d", @keyrack_dir])
+  end
+
   test "opening and collapsing" do
     setup_config
 

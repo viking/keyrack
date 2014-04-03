@@ -1,4 +1,8 @@
 #!/usr/bin/env ruby
 require 'keyrack'
 
-Keyrack::Runner.new(ARGV)
+begin
+  Keyrack::Runner.new(ARGV)
+rescue Interrupt
+  puts
+end

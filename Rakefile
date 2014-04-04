@@ -7,3 +7,11 @@ Rake::TestTask.new(:test) do |test|
   test.verbose = true
 end
 task :default => :test
+
+namespace :test do
+  Rake::TestTask.new(:unit) do |test|
+    test.libs << 'lib' << 'test'
+    test.pattern = 'test/unit/**/test_*.rb'
+    test.verbose = true
+  end
+end

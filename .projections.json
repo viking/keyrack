@@ -1,0 +1,6 @@
+{
+  "lib/keyrack/*.rb": {
+    "alternate": "test/unit/{dirname}/test_{basename}.rb",
+    "type": "source"
+  }
+}
